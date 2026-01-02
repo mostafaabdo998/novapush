@@ -1,0 +1,5 @@
+{
+  "name": "PushNova SaaS - LaraPush Wrapper",
+  "description": "A high-performance SaaS platform built as a professional wrapper for LaraPush, allowing marketers to manage push notifications with custom branding, detailed analytics, and domain-specific segmentation.",
+  "requestFramePermissions": []
+}
