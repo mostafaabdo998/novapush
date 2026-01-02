@@ -2,15 +2,16 @@
 import { Domain, Campaign, Stats } from '../types';
 
 /**
- * محرك PushNova SaaS - النسخة المتصلة بالجسر البرمجي الحقيقي
- * هذا الملف هو القلب التقني الذي يربط واجهتك بقاعدة بيانات لارا بوش lp_db
+ * محرك PushNova SaaS - نظام التقسيم الذكي (Segments/Tags Engine)
+ * يعمل هذا المحرك على ربط المشتركين بوسوم (Tags) بدلاً من تعريف نطاقات مستقلة لكل عميل.
  */
 
 const CONFIG = {
   endpoint: 'https://push.nbdmasr.com/api/createCampaign',
   bridge: 'https://push.nbdmasr.com/api_bridge.php',
   db_password: 'B77E1KQH0KJCG4L8',
-  admin_email: 'admin@pushnova.com'
+  admin_email: 'admin@pushnova.com',
+  main_domain: 'nbdmasr.com' // النطاق الرئيسي الذي تتم عليه عمليات الاشتراك
 };
 
 export class LaraPushService {
@@ -21,10 +22,10 @@ export class LaraPushService {
     return this.instance;
   }
 
-  // مصفوفة محلية لعرض البيانات فوراً
-  private domains: Domain[] = [
+  // المتاجر المضافة (يتم التعامل معها كـ Segments في LaraPush)
+  private segments: Domain[] = [
     { 
-      id: 'd_shoes_01', 
+      id: 'seg_shoes_01', 
       url: 'shoes-store.com', 
       status: 'active', 
       subscribers: 8420, 
@@ -34,76 +35,58 @@ export class LaraPushService {
   ];
 
   async getDomains(): Promise<Domain[]> {
-    return [...this.domains];
+    return [...this.segments];
   }
 
   /**
-   * الخطوة الحاسمة: إضافة الدومين لقاعدة بيانات لارا بوش عبر الجسر البرمجي
+   * تسجيل "متجر/سيجمنت" جديد في النظام
    */
   async addDomain(url: string): Promise<Domain> {
-    // 1. تنظيف المدخلات (إزالة البروتوكول والمسافات والمسارات)
-    const cleanDomain = url.trim().replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
+    const cleanTag = url.trim().replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
     
     try {
-      console.log("[PushNova] Sending to Bridge:", cleanDomain);
+      console.log("[PushNova] Registering Segment Tag:", cleanTag);
 
+      // نقوم بإرسال الطلب للجسر ليقوم بإنشاء "Tag" أو "Segment" في قاعدة البيانات
       const response = await fetch(CONFIG.bridge, {
         method: 'POST',
-        mode: 'cors', // التأكيد على وضع CORS كما هو مطلوب
+        mode: 'cors',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
         body: JSON.stringify({ 
-          domain_url: cleanDomain 
+          segment_tag: cleanTag, // تغيير المفتاح ليعكس نظام الـ Segments
+          action: 'create_segment'
         })
       });
 
-      // 2. التحقق من رد السيرفر
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server Error: ${response.status} - ${errorText}`);
-      }
+      if (!response.ok) throw new Error(`خطأ اتصال: ${response.status}`);
 
       const result = await response.json();
+      if (!result.success) throw new Error(result.message);
 
-      if (!result.success) {
-        throw new Error(result.message || "فشل الربط من جهة السيرفر");
-      }
-
-      // بعد النجاح في السيرفر، نقوم بتحديث الحالة المحلية
-      const newDomain: Domain = {
-        id: 'd_' + Math.random().toString(36).substr(2, 6),
-        url: cleanDomain,
+      const newSegment: Domain = {
+        id: 'seg_' + Math.random().toString(36).substr(2, 6),
+        url: cleanTag,
         status: 'active', 
         subscribers: 0,
         createdAt: new Date().toISOString().split('T')[0],
         publicKey: 'B77E1KQH0KJCG4L8_' + Math.random().toString(36).substr(2, 4).toUpperCase()
       };
 
-      this.domains.push(newDomain);
-      return newDomain;
+      this.segments.push(newSegment);
+      return newSegment;
 
     } catch (error: any) {
-      console.error("Critical Connection Error:", error);
-      // نعيد رمي الخطأ ليتم معالجته في الواجهة الأمامية (UI)
+      console.error("Segment Registration Error:", error);
       throw error;
     }
   }
 
-  async getStats(domainUrl: string): Promise<Stats> {
-    return {
-      totalSubscribers: domainUrl === 'shoes-store.com' ? 8420 : 0,
-      growth: domainUrl === 'shoes-store.com' ? 12.5 : 0,
-      countries: domainUrl === 'shoes-store.com' ? [
-        { name: 'السعودية', value: 4200 },
-        { name: 'مصر', value: 2100 }
-      ] : [],
-      devices: [],
-      dailyActive: []
-    };
-  }
-
+  /**
+   * إرسال إشعار بناءً على الـ Segment (Tag)
+   */
   async sendNotification(campaign: Partial<Campaign>): Promise<boolean> {
     const payload = {
       email: CONFIG.admin_email,
@@ -111,9 +94,12 @@ export class LaraPushService {
       title: campaign.title,
       message: campaign.message,
       url: campaign.url,
-      "domains[]": campaign.targetDomains,
+      // نرسل الوسوم (Tags) بدلاً من الدومينات المستقلة
+      "tags[]": campaign.targetDomains, 
       schedule_now: 1
     };
+
+    console.log("[PushNova API] Sending Tagged Campaign:", payload);
 
     const response = await fetch(CONFIG.endpoint, {
       method: 'POST',
@@ -122,6 +108,20 @@ export class LaraPushService {
     });
 
     return response.ok;
+  }
+
+  async getStats(segmentTag: string): Promise<Stats> {
+    // محاكاة استعلام: SELECT count(*) FROM subscribers WHERE tag = 'segmentTag'
+    return {
+      totalSubscribers: segmentTag === 'shoes-store.com' ? 8420 : 0,
+      growth: 12.5,
+      countries: [
+        { name: 'السعودية', value: 4200 },
+        { name: 'مصر', value: 2100 }
+      ],
+      devices: [],
+      dailyActive: []
+    };
   }
 
   async getCampaigns(): Promise<Campaign[]> {
