@@ -46,24 +46,23 @@ const DomainsView: React.FC = () => {
     if (!selectedDomain) return '';
     
     if (selectedDomain.type === 'segment') {
-      // كود الـ Pop-up الاحترافي للمنصات (SaaS Mode) - الرابط المركزي
-      return `<!-- PushNova Smart Integration (Fast Mode) -->
-<script>
+      // الكود الجديد الذي ينسخه المسوق ويضعه في موقعه (SaaS Mode)
+      return `<script>
 (function() {
   var btn = document.createElement("div");
   btn.innerHTML = "🔔"; 
-  btn.style = "position:fixed; bottom:25px; right:25px; width:64px; height:64px; background:#28a745; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; cursor:pointer; z-index:999999; box-shadow:0 8px 20px rgba(0,0,0,0.2); border:3px solid white; transition: all 0.3s ease;";
+  btn.style = "position:fixed; bottom:25px; right:25px; width:60px; height:60px; background:#28a745; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; z-index:999999; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease;";
   btn.onmouseover = function() { this.style.transform = "scale(1.1)"; };
   btn.onmouseout = function() { this.style.transform = "scale(1)"; };
   document.body.appendChild(btn);
 
   btn.onclick = function() {
-    var width = 480, height = 580;
+    var width = 450, height = 550;
     var left = (screen.width/2)-(width/2);
     var top = (screen.height/2)-(height/2);
-    // التوجيه لصفحة الاشتراك المركزية مع المعرف الخاص بالمسوق
-    var subscribeUrl = "https://nbdmasr.com/subscribe.html?client_id=${selectedDomain.url}";
-    window.open(subscribeUrl, "PushNova", "width="+width+",height="+height+",top="+top+",left="+left+",resizable=no,scrollbars=no");
+    // الرابط الجديد يشير إلى صفحة ووردبريس subscribe-nova
+    var subscribeUrl = "https://nbdmasr.com/subscribe-nova/?client_id=" + window.location.hostname;
+    window.open(subscribeUrl, "PushNova", "width="+width+",height="+height+",top="+top+",left="+left);
   };
 })();
 </script>`;
@@ -144,7 +143,7 @@ const DomainsView: React.FC = () => {
               <div className="p-10 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-black text-slate-900">{selectedDomain.url}</h2>
-                  <p className="text-slate-500 font-medium">نظام الربط: {selectedDomain.type === 'domain' ? 'Direct Integration' : 'Pop-up Segment'}</p>
+                  <p className="text-slate-500 font-medium">نظام الربط: {selectedDomain.type === 'domain' ? 'Native Mode' : 'Smart Pop-up'}</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 text-[10px] font-black">
                   <Check size={14} /> متصل بنجاح
@@ -158,7 +157,7 @@ const DomainsView: React.FC = () => {
                     <div>
                        <h4 className="font-black text-blue-900 text-sm">ميزة الربط السريع النشطة</h4>
                        <p className="text-blue-800/70 text-[11px] font-bold leading-relaxed mt-1">
-                         هذا المتجر يستخدم نظام "النافذة المنبثقة" عبر الدومين المركزي لضمان أعلى نسبة قبول للإشعارات وتفادي حظر المتصفحات للمنصات المشتركة.
+                         يتم توجيه المشتركين عبر الدومين المركزي <span className="underline">nbdmasr.com</span> لضمان تجاوز قيود المتصفحات على المنصات المشتركة.
                        </p>
                     </div>
                   </div>
@@ -182,7 +181,7 @@ const DomainsView: React.FC = () => {
                       className="absolute top-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 shadow-xl shadow-blue-500/30 transition-all hover:scale-105 active:scale-95"
                     >
                       <Copy size={18} />
-                      نسخ كود التفعيل
+                      نسخ الكود
                     </button>
                   </div>
                 </div>
@@ -208,15 +207,6 @@ const DomainsView: React.FC = () => {
                     </p>
                   </div>
                 </div>
-
-                {selectedDomain.type === 'domain' && (
-                  <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl flex items-start gap-4">
-                    <ShieldAlert className="text-amber-500 shrink-0" size={24} />
-                    <p className="text-amber-800 text-[10px] font-bold leading-relaxed">
-                      <b>ملاحظة فنية:</b> للمتاجر المستقلة، يجب رفع ملفين التعريف الخاصة بالإشعارات (Service Worker) في المجلد الرئيسي للمتجر لضمان الربط المباشر.
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           ) : (
