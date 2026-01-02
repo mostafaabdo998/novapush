@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { LaraPushService } from '../services/laraPushService';
 import { Domain } from '../types';
-import { MOCK_USER } from '../constants';
-import { Globe, Plus, CheckCircle, Clock, Copy, Download, Loader2, Database, AlertCircle, Bell, Code2, MousePointerClick, Layout, Tags } from 'lucide-react';
+import { Globe, Plus, CheckCircle, Clock, Copy, Download, Loader2, Database, AlertCircle, Bell, Code2, MousePointerClick, Layout, Tags, ShieldAlert, ExternalLink } from 'lucide-react';
 
 const DomainsView: React.FC = () => {
   const [domains, setDomains] = useState<Domain[]>([]);
@@ -12,7 +11,6 @@ const DomainsView: React.FC = () => {
   const [newUrl, setNewUrl] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pixelType, setPixelType] = useState<'bell' | 'button'>('bell');
   
   const service = LaraPushService.getInstance();
 
@@ -27,15 +25,16 @@ const DomainsView: React.FC = () => {
     setIsSyncing(true);
     setError(null);
     try {
-      const added = await service.addDomain(newUrl);
+      // تنظيف الرابط ليكون بمثابة Tag فريد
+      const cleanUrl = newUrl.trim().replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
+      const added = await service.addDomain(cleanUrl);
       setDomains(prev => [...prev, added]);
       setNewUrl('');
       setShowAddModal(false);
       setSelectedDomain(added);
-      alert("✅ تم تفعيل المتجر بنظام Segments! سيظهر الآن في لوحة لارا بوش تحت الوسوم (Tags).");
+      alert("✅ تم تفعيل السيجمنت بنجاح! كود الربط متاح الآن.");
     } catch (err: any) {
       setError(err.message || "خطأ في الاتصال بالسيرفر.");
-      alert("⚠️ فشل الربط: " + (err.message || "تأكد من إعدادات CORS"));
     } finally {
       setIsSyncing(false);
     }
@@ -46,55 +45,44 @@ const DomainsView: React.FC = () => {
     alert('تم نسخ الكود بنجاح! ضعه الآن في متجرك.');
   };
 
-  const getPixelCode = () => {
-    const userId = selectedDomain?.url || 'default'; // نستخدم رابط المتجر كمعرف للسيجمنت
+  const getPopUpCode = () => {
+    const marketerID = selectedDomain?.url || 'default_store';
+    return `<!-- PushNova Professional Pop-up Integration -->
+<script>
+  function initPushNova() {
+    var marketerID = "${marketerID}"; 
     
-    if (pixelType === 'bell') {
-      return `<!-- PushNova Professional Soft-Prompt Bell -->
-<script>
-(function() {
-  var btn = document.createElement("div");
-  btn.innerHTML = "🔔";
-  btn.style = "position:fixed; bottom:25px; right:25px; width:64px; height:64px; background:#2563eb; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; cursor:pointer; z-index:999999; box-shadow:0 10px 30px rgba(37,99,235,0.4); border:4px solid white; transition:all 0.3s ease-in-out;";
-  
-  btn.onmouseover = function() { btn.style.transform = "scale(1.1) rotate(15deg)"; };
-  btn.onmouseout = function() { btn.style.transform = "scale(1) rotate(0deg)"; };
-  
-  document.body.appendChild(btn);
-  
-  btn.onclick = function() {
-    var width = 450, height = 580;
-    var left = (screen.width/2)-(width/2);
-    var top = (screen.height/2)-(height/2);
-    // نفتح صفحة الاشتراك الاحترافية ونمرر معرف السيجمنت
-    window.open("https://nbdmasr.com/subscribe.html?client_id=${userId}", "PushNova", 
-                "width="+width+",height="+height+",top="+top+",left="+left+",resizable=no,scrollbars=no");
-  };
-})();
-</script>`;
-    } else {
-      return `<!-- PushNova Custom Subscription Button -->
-<script>
-  function openPushSub() {
-    var width = 450, height = 580;
-    var left = (screen.width/2)-(width/2);
-    var top = (screen.height/2)-(height/2);
-    var url = "https://nbdmasr.com/subscribe.html?client_id=${userId}";
-    window.open(url, "PushNova", "width="+width+",height="+height+",top="+top+",left="+left);
+    var btn = document.createElement("div");
+    btn.innerHTML = "🔔";
+    btn.style = "position:fixed;bottom:25px;right:25px;width:64px;height:64px;background:#28a745;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;z-index:999999;box-shadow:0 8px 20px rgba(0,0,0,0.25);border:4px solid white;transition:all 0.3s ease;";
+    
+    btn.onmouseover = function() { this.style.transform = "scale(1.1)"; };
+    btn.onmouseout = function() { this.style.transform = "scale(1)"; };
+    
+    document.body.appendChild(btn);
+
+    btn.onclick = function() {
+      var width = 500, height = 580;
+      var left = (screen.width/2)-(width/2);
+      var top = (screen.height/2)-(height/2);
+      // رابط صفحة الاشتراك المركزية مع تمرير المعرف
+      var url = "https://nbdmasr.com/subscribe.html?client_id=" + marketerID;
+      window.open(url, "PushNova", "width="+width+",height="+height+",top="+top+",left="+left+",resizable=no,scrollbars=no");
+    };
   }
-</script>
-<button onclick="openPushSub()" style="background:#2563eb; color:#fff; padding:14px 32px; border:none; border-radius:16px; cursor:pointer; font-weight:bold; font-size:16px; box-shadow:0 8px 20px rgba(37,99,235,0.3); transition: 0.3s;">
-    🔔 اشترك في التنبيهات
-</button>`;
-    }
+  
+  // تشغيل المحرك عند تحميل الصفحة
+  if (window.addEventListener) window.addEventListener("load", initPushNova, false);
+  else if (window.attachEvent) window.attachEvent("onload", initPushNova);
+</script>`;
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">إدارة المتاجر (Segments)</h1>
-          <p className="text-slate-500">قم بإضافة متاجر عملائك ليتم تقسيمهم آلياً باستخدام الوسوم (Tags) في لارا بوش.</p>
+          <h1 className="text-2xl font-black text-slate-900">إدارة المتاجر والسيجمنتس</h1>
+          <p className="text-slate-500">نظام النطاق المركزي (Central Domain) لتجاوز حظر المتصفحات.</p>
         </div>
         <button 
           onClick={() => { setShowAddModal(true); setError(null); }}
@@ -107,7 +95,7 @@ const DomainsView: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1 space-y-4">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mr-2">المتاجر النشطة</h3>
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mr-2">متاجرك النشطة</h3>
           {domains.map((domain) => (
             <button
               key={domain.id}
@@ -123,12 +111,12 @@ const DomainsView: React.FC = () => {
                   <Tags size={24} />
                 </div>
                 <span className="text-[10px] font-black px-3 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-                  Tag: {domain.url}
+                  Segment: {domain.url}
                 </span>
               </div>
               <h3 className="font-black text-slate-900 text-lg truncate">{domain.url}</h3>
               <div className="flex items-center justify-between mt-4">
-                 <span className="text-xs text-slate-400">مشتركي السيجمنت</span>
+                 <span className="text-xs text-slate-400">إجمالي المشتركين</span>
                  <span className="text-sm font-bold text-blue-600">{domain.subscribers.toLocaleString()}</span>
               </div>
             </button>
@@ -140,75 +128,78 @@ const DomainsView: React.FC = () => {
             <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
               <div className="p-10 border-b border-slate-50 bg-gradient-to-l from-slate-50 to-white flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900">إعدادات متجر {selectedDomain.url}</h2>
-                  <p className="text-slate-500 mt-2 font-medium">نظام التقسيم بالوسوم (Segmentation) مفعل لهذا المتجر.</p>
+                  <h2 className="text-2xl font-black text-slate-900">كود التفعيل لمتجر {selectedDomain.url}</h2>
+                  <p className="text-slate-500 mt-2 font-medium">استخدم كود الـ Pop-up الاحترافي لزيادة نسبة التحويل.</p>
                 </div>
-                <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 text-xs font-black">
-                   LaraPush Tag Linked
+                <div className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 text-xs font-black animate-pulse">
+                   Ready for Injection
                 </div>
               </div>
               
-              <div className="p-10 space-y-12">
-                {/* Step: Pixel Generator */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg shadow-lg">1</div>
-                    <h3 className="font-black text-slate-900 text-lg">كود البكسل الذكي (Soft-Prompt)</h3>
-                  </div>
-                  <div className="pr-14 space-y-6">
-                    <p className="text-sm text-slate-500 font-medium">اختر شكل زر الاشتراك الذي سيظهر في متجر العميل:</p>
-                    <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">
-                      <button 
-                        onClick={() => setPixelType('bell')}
-                        className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${pixelType === 'bell' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
-                      >جرس عائم احترافي</button>
-                      <button 
-                        onClick={() => setPixelType('button')}
-                        className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${pixelType === 'button' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
-                      >زر اشتراك مخصص</button>
-                    </div>
+              <div className="p-10 space-y-10">
+                {/* Visual Feedback on sw.js */}
+                <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl flex items-start gap-4">
+                   <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-lg shadow-amber-500/20">
+                      <ShieldAlert size={24} />
+                   </div>
+                   <div>
+                      <h4 className="font-black text-amber-900 text-md">تنبيه تقني هام (sw.js)</h4>
+                      <p className="text-amber-700/80 text-xs mt-1 leading-relaxed font-medium">
+                        تأكد من وجود ملف <span className="font-bold">sw.js</span> في المجلد الرئيسي لموقع <span className="underline">nbdmasr.com</span>. بدون هذا الملف، لن تظهر طلبات الإشعارات للمشتركين حتى مع وجود الكود.
+                      </p>
+                      <a href="#" className="inline-flex items-center gap-1 text-[10px] font-black text-amber-900 mt-2 hover:underline">
+                        تحميل ملف sw.js الافتراضي <ExternalLink size={10} />
+                      </a>
+                   </div>
+                </div>
 
-                    <div className="relative group">
-                      <pre className="bg-slate-900 text-blue-300 p-8 rounded-[2rem] text-[11px] font-mono overflow-x-auto leading-relaxed border-4 border-slate-800 shadow-2xl ltr text-left custom-scrollbar">
-                        {getPixelCode()}
-                      </pre>
-                      <button 
-                        onClick={() => copyToClipboard(getPixelCode())}
-                        className="absolute top-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all shadow-lg flex items-center gap-2 text-xs font-bold"
-                      >
-                        <Copy size={16} />
-                        نسخ الكود
-                      </button>
-                    </div>
+                {/* Pop-up Code Block */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                     <h3 className="font-black text-slate-900 text-lg flex items-center gap-2">
+                       <Code2 className="text-blue-600" />
+                       كود الـ Pop-up الاحترافي
+                     </h3>
+                     <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-bold">JavaScript / Header</span>
+                  </div>
+                  
+                  <div className="relative group">
+                    <pre className="bg-slate-900 text-blue-300 p-8 rounded-[2rem] text-[11px] font-mono overflow-x-auto leading-relaxed border-4 border-slate-800 shadow-2xl ltr text-left custom-scrollbar">
+                      {getPopUpCode()}
+                    </pre>
+                    <button 
+                      onClick={() => copyToClipboard(getPopUpCode())}
+                      className="absolute top-6 right-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 shadow-xl shadow-blue-500/30 transition-all hover:scale-105"
+                    >
+                      <Copy size={16} />
+                      نسخ كود الربط
+                    </button>
                   </div>
                 </div>
 
-                {/* Step: Guide */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg shadow-lg">2</div>
-                    <h3 className="font-black text-slate-900 text-lg">أين يوضع الكود؟</h3>
-                  </div>
-                  <div className="pr-14 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-600 transition-all">
-                      <div className="flex items-center gap-3 mb-3">
-                         <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg"><Layout size={18} /></div>
-                         <h4 className="font-black text-slate-800">EasyOrder / Salla</h4>
+                {/* Integration Guides */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-colors">
+                      <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
+                         <Layout size={20} />
                       </div>
-                      <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                        اذهب إلى "إعدادات المتجر" {'>'} "أكواد تتبع" {'>'} "Header"، ثم الصق الكود.
-                      </p>
-                    </div>
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-600 transition-all">
-                      <div className="flex items-center gap-3 mb-3">
-                         <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg"><Code2 size={18} /></div>
-                         <h4 className="font-black text-slate-800">Shopify / WooCommerce</h4>
+                      <h5 className="font-black text-slate-900 text-sm mb-2">Salla / EasyOrder</h5>
+                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">اذهب للإعدادات {'>'} "أكواد مخصصة" {'>'} Header والصق الكود.</p>
+                   </div>
+                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-colors">
+                      <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                         <Code2 size={20} />
                       </div>
-                      <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                         اذهب إلى "تعديل القالب" {'>'} theme.liquid والصق الكود قبل وسم {`</body>`}.
-                      </p>
-                    </div>
-                  </div>
+                      <h5 className="font-black text-slate-900 text-sm mb-2">Shopify</h5>
+                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">اذهب لـ Themes {'>'} Edit Code {'>'} theme.liquid والصقه قبل {`</body>`}.</p>
+                   </div>
+                   <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-colors">
+                      <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4">
+                         <Bell size={20} />
+                      </div>
+                      <h5 className="font-black text-slate-900 text-sm mb-2">WooCommerce</h5>
+                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed">استخدم إضافة "Insert Headers and Footers" وضع الكود في الـ Header.</p>
+                   </div>
                 </div>
               </div>
             </div>
@@ -217,8 +208,8 @@ const DomainsView: React.FC = () => {
               <div className="w-24 h-24 bg-blue-50 text-blue-200 rounded-full flex items-center justify-center mb-6">
                 <MousePointerClick size={48} />
               </div>
-              <h3 className="font-black text-slate-900 text-xl">اختر متجر عميل</h3>
-              <p className="text-slate-400 max-w-sm mt-3 font-medium">سيتم توليد كود البكسل الذي يربط المشتركين بالسيجمنت الصحيح تلقائياً.</p>
+              <h3 className="font-black text-slate-900 text-xl">اختر متجر عميل للمتابعة</h3>
+              <p className="text-slate-400 max-w-sm mt-3 font-medium">سيتم توليد كود الـ Pop-up الفريد المخصص لهذا المتجر لضمان تقسيم المشتركين بشكل آلي.</p>
             </div>
           )}
         </div>
@@ -228,13 +219,13 @@ const DomainsView: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 space-y-8 animate-in zoom-in-95 duration-300">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-black text-slate-900">إضافة متجر (Segment)</h2>
-              <p className="text-slate-500 font-medium">سيتم إنشاء وسم جديد في LaraPush</p>
+              <h2 className="text-2xl font-black text-slate-900">إضافة سيجمنت جديد</h2>
+              <p className="text-slate-500 font-medium">سيتم ربط المشتركين بوسم (Tag) خاص</p>
             </div>
             
             <form onSubmit={handleAddDomain} className="space-y-6">
               <div className="space-y-3">
-                <label className="text-sm font-black text-slate-700 block mr-2">اسم المتجر أو الدومين (للتوسيم)</label>
+                <label className="text-sm font-black text-slate-700 block mr-2">رابط المتجر (بدون https)</label>
                 <div className="relative">
                   <Globe className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                   <input 
@@ -243,8 +234,8 @@ const DomainsView: React.FC = () => {
                     disabled={isSyncing}
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
-                    placeholder="my-shopify-store.com"
-                    className="w-full pr-14 pl-6 py-4 rounded-2xl border-2 border-slate-100 focus:border-blue-600 focus:outline-none font-bold placeholder:text-slate-300 transition-all shadow-sm"
+                    placeholder="mystore.com"
+                    className="w-full pr-14 pl-6 py-4 rounded-2xl border-2 border-slate-100 focus:border-blue-600 focus:outline-none font-bold shadow-sm transition-all"
                   />
                 </div>
               </div>
@@ -254,7 +245,7 @@ const DomainsView: React.FC = () => {
                   disabled={isSyncing}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-xl shadow-blue-500/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {isSyncing ? <Loader2 className="animate-spin" size={20} /> : 'تفعيل السيجمنت'}
+                  {isSyncing ? <Loader2 className="animate-spin" size={20} /> : 'تفعيل المتجر'}
                 </button>
                 <button 
                   type="button"

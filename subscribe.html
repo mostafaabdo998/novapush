@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تفعيل التنبيهات - PushNova</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-    <!-- افتراض وجود مكتبة لارا بوش على النطاق الرئيسي -->
+    <title>تفعيل التنبيهات الذكية - PushNova</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <!-- المحرك الرئيسي لـ LaraPush على الدومين المركزي -->
     <script src="https://nbdmasr.com/larapush.js"></script>
     <style>
         body { 
@@ -16,111 +16,125 @@
             justify-content: center; 
             height: 100vh; 
             margin: 0; 
-            background: #f8fafc; 
+            background: #f1f5f9; 
         }
         .card { 
             background: white; 
-            padding: 40px 30px; 
-            border-radius: 24px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            padding: 45px 35px; 
+            border-radius: 32px; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); 
             text-align: center; 
             width: 90%; 
-            max-width: 380px; 
-            border: 1px solid #f1f5f9;
+            max-width: 400px; 
+            border: 1px solid #e2e8f0;
         }
-        .icon-wrapper {
-            width: 80px;
-            height: 80px;
-            background: #eff6ff;
-            border-radius: 50%;
+        .icon-box {
+            width: 90px;
+            height: 90px;
+            background: #2563eb;
+            color: white;
+            border-radius: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 40px;
+            margin: 0 auto 25px;
+            font-size: 45px;
+            box-shadow: 0 15px 30px rgba(37,99,235,0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         h2 { 
-            color: #1e293b; 
-            font-size: 1.5rem; 
+            color: #0f172a; 
+            font-size: 1.6rem; 
             margin-bottom: 12px; 
             font-weight: 800;
         }
         p { 
-            color: #64748b; 
-            font-size: 0.95rem; 
-            margin-bottom: 30px; 
+            color: #475569; 
+            font-size: 1rem; 
+            margin-bottom: 35px; 
             line-height: 1.6;
+            font-weight: 500;
         }
         .btn-allow { 
-            background: #2563eb; 
+            background: #28a745; 
             color: white; 
             border: none; 
-            padding: 14px 30px; 
-            border-radius: 16px; 
-            font-size: 1.1rem; 
+            padding: 16px 30px; 
+            border-radius: 20px; 
+            font-size: 1.2rem; 
             font-weight: 700;
             cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: all 0.3s ease; 
             width: 100%; 
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            box-shadow: 0 10px 20px rgba(40,167,69,0.25);
         }
         .btn-allow:hover { 
-            background: #1d4ed8; 
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
+            background: #218838; 
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(40,167,69,0.35);
         }
-        .success-icon {
-            color: #10b981;
-            font-size: 50px;
-            margin-bottom: 15px;
-        }
+        .btn-allow:active { transform: translateY(-1px); }
+        
+        .success-view { display: none; }
     </style>
 </head>
 <body>
 
-<div class="card" id="subCard">
-    <div class="icon-wrapper">🔔</div>
-    <h2>تفعيل التنبيهات</h2>
-    <p>اشترك الآن لتصلك أحدث العروض الحصرية والخصومات فور صدورها على متجرنا.</p>
-    <button class="btn-allow" onclick="startSubscription()">تفعيل الآن</button>
+<div class="card" id="mainCard">
+    <div id="promptView">
+        <div class="icon-box">🔔</div>
+        <h2>تفعيل الإشعارات</h2>
+        <p>احصل على تنبيهات فورية بالعروض الحصرية، الخصومات الكبرى، وحالة طلباتك فور صدورها.</p>
+        <button class="btn-allow" onclick="startSubscription()">تفعيل الآن</button>
+    </div>
+
+    <div id="successView" class="success-view">
+        <div style="font-size: 70px; margin-bottom: 20px;">✅</div>
+        <h2 style="color: #28a745">تم التفعيل بنجاح!</h2>
+        <p>شكراً لثقتك. يمكنك الآن إغلاق هذه النافذة.</p>
+    </div>
 </div>
 
 <script>
+    // الحصول على معرف العميل (السيجمنت) من الرابط
     const urlParams = new URLSearchParams(window.location.search);
-    const domainTag = urlParams.get('client_id'); // معرف المتجر/السيجمنت
+    const domainTag = urlParams.get('client_id'); 
 
     function startSubscription() {
         const btn = document.querySelector('.btn-allow');
         btn.disabled = true;
         btn.innerText = "جاري الاتصال...";
 
-        // تشغيل طلب المتصفح الرسمي بعد ضغطة الزر (تفاعل المستخدم)
+        // تشغيل مكتبة لارا بوش
         if (typeof LaraPush !== 'undefined') {
             LaraPush.init({
                 onPermissionGranted: function() {
-                    // ربط المشترك بالسيجمنت الخاص بالعميل عبر التاج
+                    // ربط المشترك بالسيجمنت/التاغ المخصص للعميل
                     LaraPush.subscribeToTopic(domainTag, function() {
                         showSuccess();
                     });
                 },
                 onPermissionDenied: function() {
-                    alert("تم رفض الإذن. يرجى تفعيله من إعدادات المتصفح لتلقي العروض.");
+                    alert("يرجى السماح بالإشعارات من إعدادات المتصفح للاستفادة من الخدمة.");
                     window.close();
                 }
             });
         } else {
-            // محاكاة للبيئة التجريبية في حال عدم وجود المكتبة فعلياً
-            setTimeout(() => showSuccess(), 1000);
+            // محاكاة للبيئة التجريبية
+            console.log("Mocking LaraPush Subscription for tag:", domainTag);
+            setTimeout(() => showSuccess(), 1200);
         }
     }
 
     function showSuccess() {
-        document.getElementById('subCard').innerHTML = `
-            <div class="success-icon">✅</div>
-            <h2 style="color: #10b981">تم التفعيل بنجاح!</h2>
-            <p>شكراً لثقتك، ستصلك إشعاراتنا أولاً بأول.</p>
-        `;
-        setTimeout(() => { window.close(); }, 2000);
+        document.getElementById('promptView').style.display = 'none';
+        document.getElementById('successView').style.display = 'block';
+        setTimeout(() => { window.close(); }, 2500);
     }
 </script>
 </body>
