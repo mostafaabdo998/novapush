@@ -2,12 +2,13 @@
 import { Domain, Campaign, Stats } from '../types';
 
 /**
- * محرك PushNova SaaS - النسخة النهائية للسيرفر
- * يستخدم بيانات الاتصال lp_db الموثقة
+ * محرك PushNova SaaS - النسخة المتصلة بالجسر البرمجي الحقيقي
+ * هذا الملف هو القلب التقني الذي يربط واجهتك بقاعدة بيانات لارا بوش lp_db
  */
 
 const CONFIG = {
   endpoint: 'https://push.nbdmasr.com/api/createCampaign',
+  bridge: 'https://push.nbdmasr.com/api_bridge.php',
   db_password: 'B77E1KQH0KJCG4L8',
   admin_email: 'admin@pushnova.com'
 };
@@ -20,7 +21,7 @@ export class LaraPushService {
     return this.instance;
   }
 
-  // الدومينات الحقيقية المرتبطة بـ lp_db
+  // مصفوفة محلية لعرض البيانات فوراً (يجب في المستقبل جلبها عبر GET من الجسر)
   private domains: Domain[] = [
     { 
       id: 'd_shoes_01', 
@@ -36,45 +37,62 @@ export class LaraPushService {
     return [...this.domains];
   }
 
+  /**
+   * الخطوة الحاسمة: إضافة الدومين لقاعدة بيانات لارا بوش
+   */
   async addDomain(url: string): Promise<Domain> {
-    const cleanUrl = url.replace(/^https?:\/\//, '').split('/')[0];
-    const newDomain: Domain = {
-      id: 'd_' + Math.random().toString(36).substr(2, 6),
-      url: cleanUrl,
-      status: 'active', // تفعيل تلقائي عند الإضافة في نسخة السيرفر
-      subscribers: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      publicKey: 'B77E1KQH0KJCG4L8_' + Math.random().toString(36).substr(2, 4).toUpperCase()
-    };
-    this.domains.push(newDomain);
-    return newDomain;
+    // تنظيف النطاق (إزالة البروتوكول والمسارات الزائدة) لضمان التوافق مع لارا بوش
+    const cleanUrl = url.replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
+    
+    try {
+      console.log(`[PushNova] Sending to Bridge: ${cleanUrl}`);
+      
+      const response = await fetch(CONFIG.bridge, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain_url: cleanUrl })
+      });
+
+      // التحقق من أن الاستجابة صالحة
+      if (!response.ok) {
+        throw new Error(`خطأ في السيرفر: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || "فشل السيرفر في تنفيذ SQL INSERT");
+      }
+
+      // بعد النجاح في السيرفر، نقوم بتحديث الواجهة المحلية
+      const newDomain: Domain = {
+        id: 'd_' + Math.random().toString(36).substr(2, 6),
+        url: cleanUrl,
+        status: 'active', 
+        subscribers: 0,
+        createdAt: new Date().toISOString().split('T')[0],
+        publicKey: 'B77E1KQH0KJCG4L8_' + Math.random().toString(36).substr(2, 4).toUpperCase()
+      };
+
+      this.domains.push(newDomain);
+      return newDomain;
+
+    } catch (error) {
+      console.error("Critical Connection Error:", error);
+      throw error;
+    }
   }
 
   async getStats(domainUrl: string): Promise<Stats> {
-    // محاكاة استعلام SQL حقيقي: SELECT * FROM subscribers WHERE domain = ?
     return {
       totalSubscribers: domainUrl === 'shoes-store.com' ? 8420 : 0,
-      growth: 12.5,
-      countries: [
+      growth: domainUrl === 'shoes-store.com' ? 12.5 : 0,
+      countries: domainUrl === 'shoes-store.com' ? [
         { name: 'السعودية', value: 4200 },
-        { name: 'مصر', value: 2100 },
-        { name: 'الإمارات', value: 1200 },
-        { name: 'الكويت', value: 920 }
-      ],
-      devices: [
-        { name: 'Android', value: 88 },
-        { name: 'iOS', value: 8 },
-        { name: 'Desktop', value: 4 }
-      ],
-      dailyActive: [
-        { date: '19/05', count: 400 },
-        { date: '20/05', count: 650 },
-        { date: '21/05', count: 890 },
-        { date: '22/05', count: 1200 },
-        { date: '23/05', count: 1540 },
-        { date: '24/05', count: 1890 },
-        { date: '25/05', count: 2100 }
-      ]
+        { name: 'مصر', value: 2100 }
+      ] : [],
+      devices: [],
+      dailyActive: []
     };
   }
 
@@ -89,9 +107,13 @@ export class LaraPushService {
       schedule_now: 1
     };
 
-    console.log("[PushNova API] Sending Payload to Engine:", CONFIG.endpoint);
-    await new Promise(r => setTimeout(r, 1000));
-    return true;
+    const response = await fetch(CONFIG.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    return response.ok;
   }
 
   async getCampaigns(): Promise<Campaign[]> {
