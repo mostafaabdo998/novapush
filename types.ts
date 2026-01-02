@@ -9,6 +9,7 @@ export interface User {
 export interface Domain {
   id: string;
   url: string;
+  type: 'domain' | 'segment'; // التمييز الجديد
   status: 'active' | 'pending';
   subscribers: number;
   createdAt: string;

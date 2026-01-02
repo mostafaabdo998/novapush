@@ -1,12 +1,6 @@
 
 import { Domain, Campaign, Stats } from '../types';
 
-/**
- * محرك PushNova SaaS - نظام النطاق المركزي والتقسيم
- * المحرك (Engine): push.nbdmasr.com
- * صفحة الاشتراك (Landing): nbdmasr.com
- */
-
 const CONFIG = {
   endpoint: 'https://push.nbdmasr.com/api/createCampaign',
   bridge: 'https://push.nbdmasr.com/api_bridge.php',
@@ -28,10 +22,10 @@ export class LaraPushService {
     { 
       id: 'seg_shoes_01', 
       url: 'shoes-store.com', 
+      type: 'domain',
       status: 'active', 
       subscribers: 8420, 
-      createdAt: '2024-05-10', 
-      publicKey: 'B77E1KQH0KJCG4L8_P1' 
+      createdAt: '2024-05-10'
     }
   ];
 
@@ -39,54 +33,48 @@ export class LaraPushService {
     return [...this.segments];
   }
 
-  async addDomain(url: string): Promise<Domain> {
-    const cleanTag = url.trim().replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
+  async addDomain(url: string, type: 'domain' | 'segment'): Promise<Domain> {
+    const cleanUrl = url.trim().replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
     
     try {
+      // إرسال الطلب للجسر ليقرر: هل يضيف Domain في لارا بوش أم يضيف Tag
       const response = await fetch(CONFIG.bridge, {
         method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          segment_tag: cleanTag,
-          action: 'create_segment'
+          url: cleanUrl,
+          type: type, // 'domain' أو 'segment'
+          action: 'register_resource'
         })
       });
 
-      if (!response.ok) throw new Error(`خطأ اتصال: ${response.status}`);
-
-      const result = await response.json();
-      if (!result.success) throw new Error(result.message);
-
-      const newSegment: Domain = {
-        id: 'seg_' + Math.random().toString(36).substr(2, 6),
-        url: cleanTag,
+      const newEntry: Domain = {
+        id: Math.random().toString(36).substr(2, 9),
+        url: cleanUrl,
+        type: type,
         status: 'active', 
         subscribers: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-        publicKey: 'B77E1KQH0KJCG4L8_' + Math.random().toString(36).substr(2, 4).toUpperCase()
+        createdAt: new Date().toISOString().split('T')[0]
       };
 
-      this.segments.push(newSegment);
-      return newSegment;
+      this.segments.push(newEntry);
+      return newEntry;
 
     } catch (error: any) {
-      console.error("Segment Registration Error:", error);
+      console.error("Registration Error:", error);
       throw error;
     }
   }
 
   async sendNotification(campaign: Partial<Campaign>): Promise<boolean> {
+    // المحرك يرسل بناءً على الـ tags والـ domains المختارة
     const payload = {
       email: CONFIG.admin_email,
       password: CONFIG.db_password,
       title: campaign.title,
       message: campaign.message,
       url: campaign.url,
-      "tags[]": campaign.targetDomains, 
+      "domains[]": campaign.targetDomains, // لارا بوش يقبل الدومينات والتاغات هنا
       schedule_now: 1
     };
 
@@ -101,30 +89,15 @@ export class LaraPushService {
 
   async getStats(segmentTag: string): Promise<Stats> {
     return {
-      totalSubscribers: segmentTag === 'shoes-store.com' ? 8420 : 0,
+      totalSubscribers: 8420,
       growth: 12.5,
-      countries: [
-        { name: 'السعودية', value: 4200 },
-        { name: 'مصر', value: 2100 }
-      ],
+      countries: [{ name: 'السعودية', value: 4200 }, { name: 'مصر', value: 2100 }],
       devices: [],
       dailyActive: []
     };
   }
 
   async getCampaigns(): Promise<Campaign[]> {
-    return [
-      {
-        id: 'c_88',
-        title: 'عروض الصيف الحصرية 🏖️',
-        message: 'استمتع بخصم 40% على كافة المنتجات عند استخدام الكود SUMMER.',
-        url: 'https://shoes-store.com/promo',
-        sentCount: 8420,
-        clickCount: 1120,
-        status: 'sent',
-        createdAt: '2024-05-25 10:00',
-        targetDomains: ['shoes-store.com']
-      }
-    ];
+    return [];
   }
 }
