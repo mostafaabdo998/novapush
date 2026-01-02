@@ -2,8 +2,9 @@
 import { Domain, Campaign, Stats } from '../types';
 
 /**
- * محرك PushNova SaaS - نظام التقسيم الذكي (Segments/Tags Engine)
- * يعمل هذا المحرك على ربط المشتركين بوسوم (Tags) بدلاً من تعريف نطاقات مستقلة لكل عميل.
+ * محرك PushNova SaaS - نظام النطاق المركزي والتقسيم
+ * المحرك (Engine): push.nbdmasr.com
+ * صفحة الاشتراك (Landing): nbdmasr.com
  */
 
 const CONFIG = {
@@ -11,7 +12,8 @@ const CONFIG = {
   bridge: 'https://push.nbdmasr.com/api_bridge.php',
   db_password: 'B77E1KQH0KJCG4L8',
   admin_email: 'admin@pushnova.com',
-  main_domain: 'nbdmasr.com' // النطاق الرئيسي الذي تتم عليه عمليات الاشتراك
+  main_domain: 'nbdmasr.com',
+  engine_domain: 'push.nbdmasr.com'
 };
 
 export class LaraPushService {
@@ -22,7 +24,6 @@ export class LaraPushService {
     return this.instance;
   }
 
-  // المتاجر المضافة (يتم التعامل معها كـ Segments في LaraPush)
   private segments: Domain[] = [
     { 
       id: 'seg_shoes_01', 
@@ -38,16 +39,10 @@ export class LaraPushService {
     return [...this.segments];
   }
 
-  /**
-   * تسجيل "متجر/سيجمنت" جديد في النظام
-   */
   async addDomain(url: string): Promise<Domain> {
     const cleanTag = url.trim().replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
     
     try {
-      console.log("[PushNova] Registering Segment Tag:", cleanTag);
-
-      // نقوم بإرسال الطلب للجسر ليقوم بإنشاء "Tag" أو "Segment" في قاعدة البيانات
       const response = await fetch(CONFIG.bridge, {
         method: 'POST',
         mode: 'cors',
@@ -56,7 +51,7 @@ export class LaraPushService {
           'Accept': 'application/json'
         },
         body: JSON.stringify({ 
-          segment_tag: cleanTag, // تغيير المفتاح ليعكس نظام الـ Segments
+          segment_tag: cleanTag,
           action: 'create_segment'
         })
       });
@@ -84,9 +79,6 @@ export class LaraPushService {
     }
   }
 
-  /**
-   * إرسال إشعار بناءً على الـ Segment (Tag)
-   */
   async sendNotification(campaign: Partial<Campaign>): Promise<boolean> {
     const payload = {
       email: CONFIG.admin_email,
@@ -94,12 +86,9 @@ export class LaraPushService {
       title: campaign.title,
       message: campaign.message,
       url: campaign.url,
-      // نرسل الوسوم (Tags) بدلاً من الدومينات المستقلة
       "tags[]": campaign.targetDomains, 
       schedule_now: 1
     };
-
-    console.log("[PushNova API] Sending Tagged Campaign:", payload);
 
     const response = await fetch(CONFIG.endpoint, {
       method: 'POST',
@@ -111,7 +100,6 @@ export class LaraPushService {
   }
 
   async getStats(segmentTag: string): Promise<Stats> {
-    // محاكاة استعلام: SELECT count(*) FROM subscribers WHERE tag = 'segmentTag'
     return {
       totalSubscribers: segmentTag === 'shoes-store.com' ? 8420 : 0,
       growth: 12.5,

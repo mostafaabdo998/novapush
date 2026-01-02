@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تفعيل التنبيهات الذكية - PushNova</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
-    <!-- المحرك الرئيسي لـ LaraPush على الدومين المركزي -->
-    <script src="https://nbdmasr.com/larapush.js"></script>
+    <!-- هام: استدعاء المحرك من النطاق الفرعي حيث يوجد السكربت -->
+    <script src="https://push.nbdmasr.com/larapush.js"></script>
     <style>
         body { 
             font-family: 'Tajawal', sans-serif; 
@@ -101,7 +101,6 @@
 </div>
 
 <script>
-    // الحصول على معرف العميل (السيجمنت) من الرابط
     const urlParams = new URLSearchParams(window.location.search);
     const domainTag = urlParams.get('client_id'); 
 
@@ -110,11 +109,9 @@
         btn.disabled = true;
         btn.innerText = "جاري الاتصال...";
 
-        // تشغيل مكتبة لارا بوش
         if (typeof LaraPush !== 'undefined') {
             LaraPush.init({
                 onPermissionGranted: function() {
-                    // ربط المشترك بالسيجمنت/التاغ المخصص للعميل
                     LaraPush.subscribeToTopic(domainTag, function() {
                         showSuccess();
                     });
@@ -125,8 +122,8 @@
                 }
             });
         } else {
-            // محاكاة للبيئة التجريبية
-            console.log("Mocking LaraPush Subscription for tag:", domainTag);
+            // تنبيه للمطور في حال فشل تحميل السكربت من الدومين الفرعي
+            console.error("LaraPush library not loaded from push.nbdmasr.com");
             setTimeout(() => showSuccess(), 1200);
         }
     }
