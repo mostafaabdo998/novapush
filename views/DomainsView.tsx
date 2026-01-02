@@ -30,10 +30,21 @@ const DomainsView: React.FC = () => {
       setNewUrl('');
       setShowAddModal(false);
       setSelectedDomain(added);
-      // التنبيه المطلوب من قبل المستخدم لضمان النجاح
-      alert("تمت الإضافة بنجاح! سيظهر الآن في لوحة لارا بوش.");
+      
+      // التنبيه المخصص كما هو مطلوب في الكود المقترح
+      alert("✅ تم الربط بنجاح! سيظهر الدومين الآن في لوحة لارا بوش.");
+      
     } catch (err: any) {
-      setError(err.message || "حدث خطأ أثناء الاتصال بالجسر البرمجي. تأكد من وجود ملف api_bridge.php على السيرفر.");
+      const errorMsg = err.message || "خطأ غير معروف";
+      console.error("Connection Error:", err);
+      
+      if (errorMsg.includes("Server Error")) {
+        setError("❌ فشل الربط: " + errorMsg);
+        alert("❌ فشل الربط: " + errorMsg);
+      } else {
+        setError("⚠️ خطأ في الاتصال بالسيرفر. تأكد من إعدادات CORS.");
+        alert("⚠️ خطأ في الاتصال بالسيرفر. تأكد من إعدادات CORS.");
+      }
     } finally {
       setIsSyncing(false);
     }

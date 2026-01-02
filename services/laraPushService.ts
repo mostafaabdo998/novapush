@@ -21,7 +21,7 @@ export class LaraPushService {
     return this.instance;
   }
 
-  // مصفوفة محلية لعرض البيانات فوراً (يجب في المستقبل جلبها عبر GET من الجسر)
+  // مصفوفة محلية لعرض البيانات فوراً
   private domains: Domain[] = [
     { 
       id: 'd_shoes_01', 
@@ -38,36 +38,43 @@ export class LaraPushService {
   }
 
   /**
-   * الخطوة الحاسمة: إضافة الدومين لقاعدة بيانات لارا بوش
+   * الخطوة الحاسمة: إضافة الدومين لقاعدة بيانات لارا بوش عبر الجسر البرمجي
    */
   async addDomain(url: string): Promise<Domain> {
-    // تنظيف النطاق (إزالة البروتوكول والمسارات الزائدة) لضمان التوافق مع لارا بوش
-    const cleanUrl = url.replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
+    // 1. تنظيف المدخلات (إزالة البروتوكول والمسافات والمسارات)
+    const cleanDomain = url.trim().replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
     
     try {
-      console.log(`[PushNova] Sending to Bridge: ${cleanUrl}`);
-      
+      console.log("[PushNova] Sending to Bridge:", cleanDomain);
+
       const response = await fetch(CONFIG.bridge, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain_url: cleanUrl })
+        mode: 'cors', // التأكيد على وضع CORS كما هو مطلوب
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          domain_url: cleanDomain 
+        })
       });
 
-      // التحقق من أن الاستجابة صالحة
+      // 2. التحقق من رد السيرفر
       if (!response.ok) {
-        throw new Error(`خطأ في السيرفر: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Server Error: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.message || "فشل السيرفر في تنفيذ SQL INSERT");
+        throw new Error(result.message || "فشل الربط من جهة السيرفر");
       }
 
-      // بعد النجاح في السيرفر، نقوم بتحديث الواجهة المحلية
+      // بعد النجاح في السيرفر، نقوم بتحديث الحالة المحلية
       const newDomain: Domain = {
         id: 'd_' + Math.random().toString(36).substr(2, 6),
-        url: cleanUrl,
+        url: cleanDomain,
         status: 'active', 
         subscribers: 0,
         createdAt: new Date().toISOString().split('T')[0],
@@ -77,8 +84,9 @@ export class LaraPushService {
       this.domains.push(newDomain);
       return newDomain;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Critical Connection Error:", error);
+      // نعيد رمي الخطأ ليتم معالجته في الواجهة الأمامية (UI)
       throw error;
     }
   }
