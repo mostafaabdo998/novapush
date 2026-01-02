@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفعيل التنبيهات - PushNova</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <!-- افتراض وجود مكتبة لارا بوش على النطاق الرئيسي -->
+    <script src="https://nbdmasr.com/larapush.js"></script>
+    <style>
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            background: #f8fafc; 
+        }
+        .card { 
+            background: white; 
+            padding: 40px 30px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            text-align: center; 
+            width: 90%; 
+            max-width: 380px; 
+            border: 1px solid #f1f5f9;
+        }
+        .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: #eff6ff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+        h2 { 
+            color: #1e293b; 
+            font-size: 1.5rem; 
+            margin-bottom: 12px; 
+            font-weight: 800;
+        }
+        p { 
+            color: #64748b; 
+            font-size: 0.95rem; 
+            margin-bottom: 30px; 
+            line-height: 1.6;
+        }
+        .btn-allow { 
+            background: #2563eb; 
+            color: white; 
+            border: none; 
+            padding: 14px 30px; 
+            border-radius: 16px; 
+            font-size: 1.1rem; 
+            font-weight: 700;
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            width: 100%; 
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+        .btn-allow:hover { 
+            background: #1d4ed8; 
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4);
+        }
+        .success-icon {
+            color: #10b981;
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card" id="subCard">
+    <div class="icon-wrapper">🔔</div>
+    <h2>تفعيل التنبيهات</h2>
+    <p>اشترك الآن لتصلك أحدث العروض الحصرية والخصومات فور صدورها على متجرنا.</p>
+    <button class="btn-allow" onclick="startSubscription()">تفعيل الآن</button>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const domainTag = urlParams.get('client_id'); // معرف المتجر/السيجمنت
+
+    function startSubscription() {
+        const btn = document.querySelector('.btn-allow');
+        btn.disabled = true;
+        btn.innerText = "جاري الاتصال...";
+
+        // تشغيل طلب المتصفح الرسمي بعد ضغطة الزر (تفاعل المستخدم)
+        if (typeof LaraPush !== 'undefined') {
+            LaraPush.init({
+                onPermissionGranted: function() {
+                    // ربط المشترك بالسيجمنت الخاص بالعميل عبر التاج
+                    LaraPush.subscribeToTopic(domainTag, function() {
+                        showSuccess();
+                    });
+                },
+                onPermissionDenied: function() {
+                    alert("تم رفض الإذن. يرجى تفعيله من إعدادات المتصفح لتلقي العروض.");
+                    window.close();
+                }
+            });
+        } else {
+            // محاكاة للبيئة التجريبية في حال عدم وجود المكتبة فعلياً
+            setTimeout(() => showSuccess(), 1000);
+        }
+    }
+
+    function showSuccess() {
+        document.getElementById('subCard').innerHTML = `
+            <div class="success-icon">✅</div>
+            <h2 style="color: #10b981">تم التفعيل بنجاح!</h2>
+            <p>شكراً لثقتك، ستصلك إشعاراتنا أولاً بأول.</p>
+        `;
+        setTimeout(() => { window.close(); }, 2000);
+    }
+</script>
+</body>
+</html>

@@ -47,35 +47,43 @@ const DomainsView: React.FC = () => {
   };
 
   const getPixelCode = () => {
-    const userId = MOCK_USER.id;
-    const storeTag = selectedDomain?.url || 'default';
+    const userId = selectedDomain?.url || 'default'; // نستخدم رابط المتجر كمعرف للسيجمنت
     
     if (pixelType === 'bell') {
-      return `<!-- PushNova Segmented Floating Bell -->
+      return `<!-- PushNova Professional Soft-Prompt Bell -->
 <script>
 (function() {
   var btn = document.createElement("div");
   btn.innerHTML = "🔔";
-  btn.style = "position:fixed; bottom:20px; right:20px; width:64px; height:64px; background:#2563eb; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; z-index:999999; box-shadow:0 10px 25px rgba(37,99,235,0.4); border:4px solid white; transition:all 0.3s ease;";
+  btn.style = "position:fixed; bottom:25px; right:25px; width:64px; height:64px; background:#2563eb; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; cursor:pointer; z-index:999999; box-shadow:0 10px 30px rgba(37,99,235,0.4); border:4px solid white; transition:all 0.3s ease-in-out;";
+  
+  btn.onmouseover = function() { btn.style.transform = "scale(1.1) rotate(15deg)"; };
+  btn.onmouseout = function() { btn.style.transform = "scale(1) rotate(0deg)"; };
+  
   document.body.appendChild(btn);
   
   btn.onclick = function() {
-    // نرسل الـ store_tag لضمان تصنيف المشترك في LaraPush تحت هذا المتجر
-    var subUrl = "https://nbdmasr.com/subscribe.html?client_id=${userId}&store_tag=${storeTag}";
-    window.open(subUrl, "PushNova", "width=500,height=600,top=100,left=100");
+    var width = 450, height = 580;
+    var left = (screen.width/2)-(width/2);
+    var top = (screen.height/2)-(height/2);
+    // نفتح صفحة الاشتراك الاحترافية ونمرر معرف السيجمنت
+    window.open("https://nbdmasr.com/subscribe.html?client_id=${userId}", "PushNova", 
+                "width="+width+",height="+height+",top="+top+",left="+left+",resizable=no,scrollbars=no");
   };
 })();
 </script>`;
     } else {
-      return `<!-- PushNova Segmented Button -->
+      return `<!-- PushNova Custom Subscription Button -->
 <script>
   function openPushSub() {
-    var storeTag = "${storeTag}";
-    var url = "https://nbdmasr.com/subscribe.html?client_id=${userId}&store_tag=" + storeTag;
-    window.open(url, "PushNova", "width=500,height=600,top=100,left=100");
+    var width = 450, height = 580;
+    var left = (screen.width/2)-(width/2);
+    var top = (screen.height/2)-(height/2);
+    var url = "https://nbdmasr.com/subscribe.html?client_id=${userId}";
+    window.open(url, "PushNova", "width="+width+",height="+height+",top="+top+",left="+left);
   }
 </script>
-<button onclick="openPushSub()" style="background:#2563eb; color:#fff; padding:12px 28px; border:none; border-radius:12px; cursor:pointer; font-weight:bold; box-shadow:0 4px 14px rgba(37,99,235,0.3);">
+<button onclick="openPushSub()" style="background:#2563eb; color:#fff; padding:14px 32px; border:none; border-radius:16px; cursor:pointer; font-weight:bold; font-size:16px; box-shadow:0 8px 20px rgba(37,99,235,0.3); transition: 0.3s;">
     🔔 اشترك في التنبيهات
 </button>`;
     }
@@ -141,35 +149,23 @@ const DomainsView: React.FC = () => {
               </div>
               
               <div className="p-10 space-y-12">
-                {/* Step: Files */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg">1</div>
-                    <h3 className="font-black text-slate-900 text-lg">تحميل ملفات التفعيل (مرة واحدة)</h3>
-                  </div>
-                  <div className="pr-14">
-                    <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100 text-blue-800 text-sm font-medium leading-relaxed">
-                       ملاحظة: بما أننا نستخدم نظام الـ Segments، يحتاج العميل فقط لرفع ملفات المحرك الرئيسي (Service Worker) الخاصة بنطاقك الرئيسي <span className="font-black">nbdmasr.com</span> على متجره، أو الاكتفاء بكود البكسل الذكي أدناه.
-                    </div>
-                  </div>
-                </div>
-
                 {/* Step: Pixel Generator */}
                 <div className="space-y-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg">2</div>
-                    <h3 className="font-black text-slate-900 text-lg">كود البكسل الذكي (المتجر كسيجمنت)</h3>
+                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg shadow-lg">1</div>
+                    <h3 className="font-black text-slate-900 text-lg">كود البكسل الذكي (Soft-Prompt)</h3>
                   </div>
                   <div className="pr-14 space-y-6">
+                    <p className="text-sm text-slate-500 font-medium">اختر شكل زر الاشتراك الذي سيظهر في متجر العميل:</p>
                     <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">
                       <button 
                         onClick={() => setPixelType('bell')}
                         className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${pixelType === 'bell' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
-                      >جرس عائم</button>
+                      >جرس عائم احترافي</button>
                       <button 
                         onClick={() => setPixelType('button')}
                         className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${pixelType === 'button' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
-                      >زر اشتراك</button>
+                      >زر اشتراك مخصص</button>
                     </div>
 
                     <div className="relative group">
@@ -181,7 +177,7 @@ const DomainsView: React.FC = () => {
                         className="absolute top-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all shadow-lg flex items-center gap-2 text-xs font-bold"
                       >
                         <Copy size={16} />
-                        نسخ الكود الذكي
+                        نسخ الكود
                       </button>
                     </div>
                   </div>
@@ -190,26 +186,26 @@ const DomainsView: React.FC = () => {
                 {/* Step: Guide */}
                 <div className="space-y-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg">3</div>
-                    <h3 className="font-black text-slate-900 text-lg">طريقة التثبيت للمتاجر</h3>
+                    <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-lg shadow-lg">2</div>
+                    <h3 className="font-black text-slate-900 text-lg">أين يوضع الكود؟</h3>
                   </div>
                   <div className="pr-14 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-600 transition-all">
                       <div className="flex items-center gap-3 mb-3">
                          <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg"><Layout size={18} /></div>
-                         <h4 className="font-black text-slate-800">Shopify / Salla</h4>
+                         <h4 className="font-black text-slate-800">EasyOrder / Salla</h4>
                       </div>
                       <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                        الصق الكود في قسم الـ Header أو Scripts وسيتم ربط أي مشترك جديد تلقائياً بوسم <span className="font-bold text-blue-600">{selectedDomain.url}</span>.
+                        اذهب إلى "إعدادات المتجر" {'>'} "أكواد تتبع" {'>'} "Header"، ثم الصق الكود.
                       </p>
                     </div>
-                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 group hover:border-blue-600 transition-all">
                       <div className="flex items-center gap-3 mb-3">
                          <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg"><Code2 size={18} /></div>
-                         <h4 className="font-black text-slate-800">EasyOrder</h4>
+                         <h4 className="font-black text-slate-800">Shopify / WooCommerce</h4>
                       </div>
                       <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                         ضع الكود في "أكواد التتبع" ليظهر زر الاشتراك فوراً ويبدأ بجمع جمهورك الخاص.
+                         اذهب إلى "تعديل القالب" {'>'} theme.liquid والصق الكود قبل وسم {`</body>`}.
                       </p>
                     </div>
                   </div>
@@ -222,7 +218,7 @@ const DomainsView: React.FC = () => {
                 <MousePointerClick size={48} />
               </div>
               <h3 className="font-black text-slate-900 text-xl">اختر متجر عميل</h3>
-              <p className="text-slate-400 max-w-sm mt-3 font-medium">سيتم توليد كود البكسل الذي يحتوي على معرف السيجمنت (Tag) الخاص بالمتجر.</p>
+              <p className="text-slate-400 max-w-sm mt-3 font-medium">سيتم توليد كود البكسل الذي يربط المشتركين بالسيجمنت الصحيح تلقائياً.</p>
             </div>
           )}
         </div>
