@@ -1,23 +1,33 @@
 
 import React, { useEffect, useState } from 'react';
-import { Users, MousePointer2, Send, Globe, MapPin, TrendingUp, BarChart3, Database, Zap, Activity } from 'lucide-react';
+import { Users, MousePointer2, Send, Globe, MapPin, TrendingUp, BarChart3, Zap, Activity, ChevronDown } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
 import { LaraPushService } from '../services/laraPushService';
-import { Stats } from '../types';
+import { Stats, Domain } from '../types';
 
 const DashboardView: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string>('');
   const service = LaraPushService.getInstance();
 
   useEffect(() => {
-    service.getStats('shoes-store.com').then(setStats);
+    service.getDomains().then(list => {
+      setDomains(list);
+      if (list.length > 0) setSelectedTag(list[0].url);
+    });
   }, []);
 
+  useEffect(() => {
+    if (selectedTag) {
+      service.getStats(selectedTag).then(setStats);
+    }
+  }, [selectedTag]);
+
   if (!stats) return (
-    <div className="flex flex-col items-center justify-center h-[50vh]">
-      <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-slate-500 font-bold">جاري المزامنة مع قاعدة lp_db...</p>
+    <div className="flex items-center justify-center h-[60vh]">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
@@ -25,43 +35,41 @@ const DashboardView: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">نظرة عامة</h1>
-          <div className="flex items-center gap-3 mt-2">
-             <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[11px] font-bold border border-emerald-100">
-               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-               قاعدة البيانات: متصلة (lp_db)
-             </div>
-             <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold border border-blue-100">
-               <Zap size={12} fill="currentColor" />
-               محرك الإرسال: LaraPush API
-             </div>
-          </div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">إحصائيات المتاجر</h1>
+          <p className="text-slate-500 font-medium mt-1">مراقبة نمو المشتركين والتفاعل لكل متجر على حدة.</p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-             <Globe size={18} className="text-slate-400" />
-             <span className="text-sm font-bold text-slate-700">shoes-store.com</span>
-          </div>
+        <div className="relative group">
+          <select 
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="appearance-none bg-white px-10 py-3.5 rounded-2xl border-2 border-slate-100 font-black text-slate-700 focus:outline-none focus:border-blue-600 cursor-pointer shadow-sm min-w-[200px]"
+          >
+            {domains.map(d => (
+              <option key={d.id} value={d.url}>{d.url}</option>
+            ))}
+          </select>
+          <Globe size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600" />
+          <ChevronDown size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="إجمالي المشتركين" value={stats.totalSubscribers.toLocaleString()} trend={stats.growth} icon={<Users size={24} />} />
-        <StatCard title="الحملات المرسلة" value="1" icon={<Send size={24} />} />
-        <StatCard title="نقرات الإشعارات" value="1,120" trend={14.2} icon={<MousePointer2 size={24} />} />
-        <StatCard title="نسبة النقر (CTR)" value="13.3%" trend={2.1} icon={<BarChart3 size={24} />} />
+        <StatCard title="إجمالي المشتركين" value={(stats.totalSubscribers ?? 0).toLocaleString()} trend={stats.growth ?? 0} icon={<Users size={24} />} />
+        <StatCard title="إجمالي الحملات" value="12" icon={<Send size={24} />} />
+        <StatCard title="متوسط النقرات" value="8.4%" trend={1.2} icon={<MousePointer2 size={24} />} />
+        <StatCard title="الحالة التقنية" value="متصل" icon={<Activity size={24} />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40">
+        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40">
           <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
             <TrendingUp size={24} className="text-blue-600" />
-            نمو المشتركين اليومي
+            نمو المشتركين (آخر 7 أيام)
           </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats.dailyActive}>
+              <AreaChart data={stats.dailyActive ?? []}>
                 <defs>
                   <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15}/>
@@ -81,35 +89,36 @@ const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col">
           <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
             <MapPin size={24} className="text-blue-600" />
-            التوزيع الجغرافي النشط
+            توزيع الأجهزة
           </h3>
-          <div className="space-y-6">
-            {stats.countries.map((country, idx) => (
-              <div key={idx} className="space-y-2">
+          <div className="space-y-8 flex-1">
+            {(stats.devices ?? []).map((device, idx) => (
+              <div key={idx} className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-700 font-bold">{country.name}</span>
-                  <span className="text-blue-600 font-black">{((country.value / stats.totalSubscribers) * 100).toFixed(1)}%</span>
+                  <span className="text-slate-700 font-bold">{device.name}</span>
+                  <span className="text-blue-600 font-black">{device.value}%</span>
                 </div>
-                <div className="w-full bg-slate-50 h-2.5 rounded-full overflow-hidden border border-slate-100">
+                <div className="w-full bg-slate-50 h-3 rounded-full overflow-hidden border border-slate-100">
                   <div 
-                    className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out" 
-                    style={{ width: `${(country.value / stats.totalSubscribers) * 100}%` }}
+                    className="bg-blue-600 h-full rounded-full transition-all duration-1000" 
+                    style={{ width: `${device.value}%` }}
                   />
                 </div>
               </div>
             ))}
           </div>
           
-          <div className="mt-10 p-5 bg-slate-900 rounded-2xl text-white">
-             <div className="flex items-center gap-2 mb-2 text-blue-400 font-bold text-xs">
-                <Activity size={14} />
-                <span>حالة المزامنة</span>
+          <div className="mt-10 p-5 bg-slate-900 rounded-2xl">
+             <div className="flex items-center gap-2 mb-2 text-emerald-400 font-bold text-xs">
+                <Zap size={14} />
+                <span>اتصال الجسر النشط</span>
              </div>
-             <p className="text-[10px] text-slate-400 font-mono">
-               SQL: SELECT * FROM subscribers WHERE domain = 'shoes-store.com'
+             <p className="text-[10px] text-slate-400 font-mono leading-relaxed">
+               ENDPOINT: /api_bridge.php<br/>
+               CLIENT_ID: {selectedTag}
              </p>
           </div>
         </div>

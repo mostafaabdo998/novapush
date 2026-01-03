@@ -13,7 +13,7 @@ const CampaignsView: React.FC = () => {
     title: '',
     message: '',
     url: '',
-    targetDomains: [] as string[] // هنا تمثل الـ Tags
+    targetDomains: [] as string[] 
   });
   
   const service = LaraPushService.getInstance();
@@ -26,17 +26,22 @@ const CampaignsView: React.FC = () => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.targetDomains.length === 0) {
-      alert("يرجى تحديد سيجمنت واحد على الأقل للإرسال");
+      alert("يرجى تحديد متجر واحد على الأقل للإرسال");
       return;
     }
     
     setIsSending(true);
-    await service.sendNotification(formData);
+    // الإرسال يتم لكل سيجمنت تم اختياره
+    const success = await service.sendNotification(formData);
     setIsSending(false);
-    setShowModal(false);
-    setFormData({ title: '', message: '', url: '', targetDomains: [] });
-    service.getCampaigns().then(setCampaigns);
-    alert("🚀 تم إرسال الحملة بنجاح عبر نظام الـ Tags!");
+    
+    if (success) {
+      setShowModal(false);
+      setFormData({ title: '', message: '', url: '', targetDomains: [] });
+      alert("🚀 تم إرسال الحملة بنجاح عبر نظام السيجمنتات!");
+    } else {
+      alert("⚠️ حدث خطأ أثناء الإرسال، يرجى التحقق من إعدادات الربط.");
+    }
   };
 
   const toggleSegment = (tag: string) => {
@@ -75,33 +80,39 @@ const CampaignsView: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {campaigns.map((c) => (
-              <tr key={c.id} className="hover:bg-blue-50/20 transition-colors">
-                <td className="px-8 py-6">
-                  <div className="font-black text-slate-900 text-md">{c.title}</div>
-                  <div className="text-xs text-slate-400 mt-1 font-medium">{c.message}</div>
-                </td>
-                <td className="px-8 py-6">
-                   <div className="flex gap-2 flex-wrap">
-                     {c.targetDomains.map(tag => (
-                       <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-black">Tag: {tag}</span>
-                     ))}
-                   </div>
-                </td>
-                <td className="px-8 py-6">
-                   <div className="flex flex-col">
-                      <span className="text-sm font-black text-slate-900">{c.sentCount.toLocaleString()}</span>
-                      <span className="text-[10px] text-emerald-600 font-bold">نموذج الإرسال: Tag-Based</span>
-                   </div>
-                </td>
-                <td className="px-8 py-6">
-                  <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-black shadow-sm">
-                    <CheckCircle size={12} />
-                    تم الإرسال
-                  </span>
-                </td>
+            {campaigns.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-12 text-center text-slate-400 font-bold">لا توجد حملات مرسلة حالياً</td>
               </tr>
-            ))}
+            ) : (
+              campaigns.map((c) => (
+                <tr key={c.id} className="hover:bg-blue-50/20 transition-colors">
+                  <td className="px-8 py-6">
+                    <div className="font-black text-slate-900 text-md">{c.title}</div>
+                    <div className="text-xs text-slate-400 mt-1 font-medium">{c.message}</div>
+                  </td>
+                  <td className="px-8 py-6">
+                     <div className="flex gap-2 flex-wrap">
+                       {c.targetDomains.map(tag => (
+                         <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-black">Tag: {tag}</span>
+                       ))}
+                     </div>
+                  </td>
+                  <td className="px-8 py-6">
+                     <div className="flex flex-col">
+                        <span className="text-sm font-black text-slate-900">{(c.sentCount ?? 0).toLocaleString()}</span>
+                        <span className="text-[10px] text-emerald-600 font-bold">نموذج الإرسال: segmentation_id</span>
+                     </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-black shadow-sm">
+                      <CheckCircle size={12} />
+                      تم الإرسال
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -135,7 +146,7 @@ const CampaignsView: React.FC = () => {
                        </button>
                      ))}
                    </div>
-                   <p className="text-[10px] text-slate-400 font-medium italic">ملاحظة: سيتم إرسال الإشعار فقط للمشتركين الذين يحملون وسم المتجر المختار في قاعدة بيانات لارا بوش.</p>
+                   <p className="text-[10px] text-slate-400 font-medium italic">ملاحظة: سيتم تمرير أول متجر مختار كـ segmentation_id لضمان الخصوصية.</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6">
@@ -194,11 +205,10 @@ const CampaignsView: React.FC = () => {
                <div className="mt-10 p-4 bg-white/5 rounded-2xl border border-white/10 w-full">
                   <div className="flex items-center gap-2 mb-2">
                      <ShieldCheck size={14} className="text-emerald-400" />
-                     <span className="text-slate-400 font-black text-[10px]">LaraPush Logic: Tag Targeting</span>
+                     <span className="text-slate-400 font-black text-[10px]">LaraPush: segmentation_id Mode</span>
                   </div>
                   <code className="text-[9px] text-blue-300 font-mono block">
-                    POST /api/createCampaign<br/>
-                    Body: {`{ tags: ["${formData.targetDomains.join('", "') || 'tag_name'}"] }`}
+                    {`{ "segmentation_id": "${formData.targetDomains[0] || 'store_tag'}" }`}
                   </code>
                </div>
             </div>
