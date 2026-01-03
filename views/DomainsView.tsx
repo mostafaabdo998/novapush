@@ -46,21 +46,19 @@ const DomainsView: React.FC = () => {
     if (!selectedDomain) return '';
     
     if (selectedDomain.type === 'segment') {
-      // الكود الجديد الذي ينسخه المسوق ويضعه في موقعه (SaaS Mode)
+      // الكود النهائي المطلوب للمسوق (SaaS / WordPress Mode)
       return `<script>
 (function() {
   var btn = document.createElement("div");
   btn.innerHTML = "🔔"; 
-  btn.style = "position:fixed; bottom:25px; right:25px; width:60px; height:60px; background:#28a745; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; z-index:999999; box-shadow:0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease;";
-  btn.onmouseover = function() { this.style.transform = "scale(1.1)"; };
-  btn.onmouseout = function() { this.style.transform = "scale(1)"; };
+  btn.style = "position:fixed; bottom:25px; right:25px; width:60px; height:60px; background:#28a745; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; z-index:999999; box-shadow:0 4px 15px rgba(0,0,0,0.2);";
   document.body.appendChild(btn);
 
   btn.onclick = function() {
     var width = 450, height = 550;
     var left = (screen.width/2)-(width/2);
     var top = (screen.height/2)-(height/2);
-    // الرابط الجديد يشير إلى صفحة ووردبريس subscribe-nova
+    // الرابط الجديد يشير إلى صفحة ووردبريس مع إرسال الدومين كـ client_id
     var subscribeUrl = "https://nbdmasr.com/subscribe-nova/?client_id=" + window.location.hostname;
     window.open(subscribeUrl, "PushNova", "width="+width+",height="+height+",top="+top+",left="+left);
   };
