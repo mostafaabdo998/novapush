@@ -98,7 +98,8 @@
 
 <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const domainTag = urlParams.get('client_id'); 
+    // تم التحديث ليقبل "tag" بدلاً من "client_id"
+    const domainTag = urlParams.get('tag'); 
 
     function startSubscription() {
         const btn = document.querySelector('.btn-allow');
@@ -120,7 +121,7 @@
             });
         } else {
             // محاكاة للبيئة التجريبية في حال عدم وجود السكربت فعلياً
-            console.log("Mocking Subscription for Segment:", domainTag);
+            console.log("Mocking Subscription for Segment Tag:", domainTag);
             setTimeout(showSuccess, 1500);
         }
     }
