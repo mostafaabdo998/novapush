@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { LaraPushService } from '../services/laraPushService';
 import { Domain } from '../types';
-import { Globe, Plus, Copy, Download, Loader2, Tags, ShieldAlert, Code2, MousePointerClick, Layout, Monitor, Smartphone, Check, HelpCircle, Info } from 'lucide-react';
+import { Globe, Plus, Copy, Loader2, Tags, Code2, MousePointerClick, Layout, Monitor, Check, Info } from 'lucide-react';
 
 const DomainsView: React.FC = () => {
   const [domains, setDomains] = useState<Domain[]>([]);
@@ -46,25 +45,27 @@ const DomainsView: React.FC = () => {
     if (!selectedDomain) return '';
     
     if (selectedDomain.type === 'segment') {
-      // الكود النهائي المطلوب للمسوق (SaaS Mode) الذي يرسل الدومين كـ tag
+      // الكود الذي ينسخه المسوق ويضعه في موقعه - نظام الربط السريع (SaaS Mode)
       return `<script>
 (function() {
-  var btn = document.createElement("div");
-  btn.innerHTML = "🔔"; // يمكنك تغيير الأيقونة أو استخدام صورة
-  btn.style = "position:fixed; bottom:20px; right:20px; width:60px; height:60px; background:#28a745; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:30px; cursor:pointer; z-index:999999; box-shadow:0 4px 15px rgba(0,0,0,0.3);";
-  document.body.appendChild(btn);
+    // 1. إنشاء الزر العائم
+    var bell = document.createElement("div");
+    bell.innerHTML = "🔔"; 
+    bell.style = "position:fixed;bottom:20px;right:20px;width:60px;height:60px;background:#28a745;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;z-index:999999;box-shadow:0 4px 15px rgba(0,0,0,0.3);";
+    document.body.appendChild(bell);
 
-  btn.onclick = function() {
-    var width = 450, height = 500;
-    var left = (screen.width/2)-(width/2);
-    var top = (screen.height/2)-(height/2);
-    
-    // إرسال دومين المسوق الحالي كـ tag لربط المشترك به
-    var tag = window.location.hostname;
-    var url = "https://nbdmasr.com/subscribe.html?tag=" + tag;
-    
-    window.open(url, "PushNotification", "width="+width+",height="+height+",top="+top+",left="+left);
-  };
+    // 2. برمجة حدث الضغط
+    bell.onclick = function() {
+        var w = 450, h = 550;
+        var left = (screen.width/2)-(w/2);
+        var top = (screen.height/2)-(h/2);
+        
+        // جلب دومين المسوق تلقائياً لإرساله كـ Tag
+        var storeDomain = window.location.hostname; 
+        var subUrl = "https://nbdmasr.com/subscribe.html?tag=" + storeDomain;
+
+        window.open(subUrl, "NotificationSystem", "width="+w+",height="+h+",top="+top+",left="+left);
+    };
 })();
 </script>`;
     } else {
