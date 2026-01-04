@@ -1,12 +1,15 @@
 
 import React, { useEffect, useState } from 'react';
-import { LaraPushService } from '../services/laraPushService';
-import { Campaign, Domain } from '../types';
+// Fix: Import FCMService instead of deprecated LaraPushService
+import { FCMService } from '../services/fcmService';
+// Fix: Use AppInstance instead of non-existent Domain
+import { Campaign, AppInstance } from '../types';
 import { Send, Plus, CheckCircle, Bell, Smartphone, Globe, ShieldCheck, Lock, Tags } from 'lucide-react';
 
 const CampaignsView: React.FC = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [segments, setSegments] = useState<Domain[]>([]);
+  // Fix: Use AppInstance[] for segments state
+  const [segments, setSegments] = useState<AppInstance[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,11 +19,14 @@ const CampaignsView: React.FC = () => {
     targetDomains: [] as string[] 
   });
   
-  const service = LaraPushService.getInstance();
+  // Fix: Use FCMService instance
+  const service = FCMService.getInstance();
 
   useEffect(() => {
+    // Fix: getCampaigns now exists in FCMService
     service.getCampaigns().then(setCampaigns);
-    service.getDomains().then(setSegments);
+    // Fix: Call getApps() to populate segments
+    service.getApps().then(setSegments);
   }, []);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -31,13 +37,15 @@ const CampaignsView: React.FC = () => {
     }
     
     setIsSending(true);
-    // الإرسال يتم لكل سيجمنت تم اختياره
-    const success = await service.sendNotification(formData);
+    // Fix: sendFCMNotification now exists in FCMService
+    const success = await service.sendFCMNotification(formData);
     setIsSending(false);
     
     if (success) {
       setShowModal(false);
       setFormData({ title: '', message: '', url: '', targetDomains: [] });
+      // Refresh campaigns list
+      service.getCampaigns().then(setCampaigns);
       alert("🚀 تم إرسال الحملة بنجاح عبر نظام السيجمنتات!");
     } else {
       alert("⚠️ حدث خطأ أثناء الإرسال، يرجى التحقق من إعدادات الربط.");
@@ -93,14 +101,14 @@ const CampaignsView: React.FC = () => {
                   </td>
                   <td className="px-8 py-6">
                      <div className="flex gap-2 flex-wrap">
-                       {c.targetDomains.map(tag => (
+                       {c.targetDomains && c.targetDomains.map(tag => (
                          <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-black">Tag: {tag}</span>
                        ))}
                      </div>
                   </td>
                   <td className="px-8 py-6">
                      <div className="flex flex-col">
-                        <span className="text-sm font-black text-slate-900">{(c.sentCount ?? 0).toLocaleString()}</span>
+                        <span className="text-sm font-black text-slate-900">{(c.sentCount ?? c.stats.sent ?? 0).toLocaleString()}</span>
                         <span className="text-[10px] text-emerald-600 font-bold">نموذج الإرسال: segmentation_id</span>
                      </div>
                   </td>

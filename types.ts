@@ -1,37 +1,53 @@
 
-export interface User {
+export interface AppInstance {
   id: string;
   name: string;
-  email: string;
-  avatar: string;
-}
-
-export interface Domain {
-  id: string;
   url: string;
-  type: 'domain' | 'segment'; // التمييز الجديد
-  status: 'active' | 'pending';
-  subscribers: number;
+  projectId: string;
+  apiKey: string;
+  messagingSenderId: string;
+  vapidKey: string;
+  status: 'active' | 'pending_verification' | 'disabled';
+  verificationToken: string;
+  subscribersCount: number;
   createdAt: string;
-  publicKey?: string;
+  plan: 'free' | 'pro' | 'enterprise';
 }
 
 export interface Campaign {
   id: string;
   title: string;
   message: string;
-  url: string;
-  sentCount: number;
-  clickCount: number;
-  status: 'sent' | 'draft' | 'scheduled';
+  clickUrl: string;
+  status: 'draft' | 'scheduled' | 'sending' | 'completed';
+  stats: {
+    sent: number;
+    delivered: number;
+    clicked: number;
+  };
+  targetType: 'all' | 'segment' | 'individual';
+  appId: string;
   createdAt: string;
+  // Added properties used in CampaignsView.tsx
   targetDomains: string[];
+  sentCount?: number;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  trigger: 'on_subscribe' | 'on_click' | 'inactivity';
+  action: 'send_notification';
+  delay: string;
+  isActive: boolean;
 }
 
 export interface Stats {
   totalSubscribers: number;
-  growth: number;
-  countries: { name: string; value: number }[];
-  devices: { name: string; value: number }[];
-  dailyActive: { date: string; count: number }[];
+  activeLast24h: number;
+  avgClickRate: number;
+  conversionRate: number;
+  countryDistribution: { name: string; value: number }[];
+  deviceDistribution: { name: string; value: number }[];
+  timeline: { date: string; clicks: number; sent: number }[];
 }

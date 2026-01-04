@@ -4,32 +4,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PushNova - منصة إشعارات المواقع الاحترافية</title>
+    <title>PushNova Enterprise - Global Push Infrastructure</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <style>
+      :root {
+        --primary: #0f172a;
+        --accent: #2563eb;
+      }
       body {
-        font-family: 'Tajawal', sans-serif;
-        scroll-behavior: smooth;
-        margin: 0;
-        padding: 0;
+        font-family: 'Tajawal', 'Plus Jakarta Sans', sans-serif;
+        background-color: #f8fafc;
       }
-      /* Custom styles for high-end SaaS feel */
-      .glass-card {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+      .enterprise-gradient {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       }
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
       }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: #f8fafc;
+      .nav-active {
+        background: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0) 100%);
+        border-right: 4px solid #2563eb;
       }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #e2e8f0;
-        border-radius: 10px;
-      }
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
     <script type="importmap">
 {
@@ -45,7 +45,7 @@
 }
 </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 overflow-x-hidden">
+  <body class="antialiased text-slate-900">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
