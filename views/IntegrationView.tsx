@@ -1,43 +1,30 @@
 
 import React, { useState } from 'react';
-import { Code, Copy, Terminal, CheckCircle2, ShieldCheck, Cpu, Info, Zap } from 'lucide-react';
+import { useApp } from '../store/AppContext';
+import { Code, Terminal, Server, Key, Copy, CheckCircle, ChevronRight, Zap } from 'lucide-react';
 
 const IntegrationView: React.FC = () => {
+  const { apps } = useApp();
+  const [activeTab, setActiveTab] = useState<'sdk' | 'api'>('api');
   const [copied, setCopied] = useState(false);
 
-  const swCode = `// firebase-messaging-sw.js
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
-
-firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  projectId: "YOUR_PROJECT_ID",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  const apiDoc = `// إرسال إشعار عبر API الباك إند الخاص بك
+const response = await fetch('https://api.pushnova.io/v1/send', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_SECRET_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    title: "خصم حصري!",
+    message: "استخدم الكود NOV20 للحصول على خصم 20%",
+    url: "https://yourstore.com/offers",
+    target: { segment: "premium_users" }
+  })
 });
 
-const messaging = firebase.messaging();
-messaging.onBackgroundMessage((payload) => {
-  console.log('[SW] Background message received', payload);
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/firebase-logo.png'
-  };
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});`;
-
-  const initCode = `// Client Side Integration
-const messaging = getMessaging(app);
-getToken(messaging, { vapidKey: 'YOUR_VAPID_PUBLIC_KEY' }).then((currentToken) => {
-  if (currentToken) {
-    // إرسال الـ Token لخادم PushNova لتخزينه
-    fetch('https://api.pushnova.io/v1/subscribers', {
-      method: 'POST',
-      body: JSON.stringify({ token: currentToken })
-    });
-  }
-});`;
+const data = await response.json();
+console.log('Push ID:', data.id);`;
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -46,106 +33,84 @@ getToken(messaging, { vapidKey: 'YOUR_VAPID_PUBLIC_KEY' }).then((currentToken) =
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 pb-20">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900">دليل ربط النظام (SDK)</h1>
-        <p className="text-slate-500 font-medium mt-1">خطوات بسيطة لدمج إشعارات PushNova في موقعك الإلكتروني.</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="bg-slate-900 rounded-3xl p-10 text-white relative overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 p-12 opacity-10 animate-float">
+          <Zap size={200} />
+        </div>
+        <div className="relative z-10 max-w-2xl">
+          <h1 className="text-3xl font-extrabold font-jakarta mb-4">ما هو نظام الـ API وكيف تستخدمه؟</h1>
+          <p className="text-slate-400 text-sm leading-relaxed mb-8">
+            الـ **API** هو الجسر البرمجي الذي يسمح لنظامك (مثل متجرك في سلة أو موقعك الخاص) بالتحدث مع منصة **PushNova**. 
+            بدلاً من الدخول للوحة التحكم يدوياً لإرسال كل إشعار، يمكنك جعل الباك إند الخاص بك يرسل الإشعارات تلقائياً عند وقوع أحداث معينة (مثل إتمام طلب جديد).
+          </p>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setActiveTab('api')}
+              className={`px-6 py-3 rounded-xl font-bold text-xs transition-all ${activeTab === 'api' ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'}`}
+            >
+              استخدام REST API
+            </button>
+            <button 
+              onClick={() => setActiveTab('sdk')}
+              className={`px-6 py-3 rounded-xl font-bold text-xs transition-all ${activeTab === 'sdk' ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'}`}
+            >
+              تثبيت الـ SDK (Web)
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          {/* Step 1 */}
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm">
-             <div className="flex items-center gap-4 mb-8">
-               <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black text-xl">1</div>
-               <h3 className="text-2xl font-black text-slate-900">إعداد Service Worker</h3>
-             </div>
-             <p className="text-slate-600 mb-6 font-medium leading-relaxed">قم بإنشاء ملف باسم <code className="bg-slate-100 px-2 py-1 rounded text-blue-600 font-bold">firebase-messaging-sw.js</code> في المجلد الرئيسي لموقعك (Root Folder).</p>
-             
-             <div className="relative group">
-                <pre className="bg-slate-900 text-blue-300 p-8 rounded-3xl text-[11px] font-mono overflow-x-auto ltr text-left leading-relaxed">
-                  {swCode}
-                </pre>
-                <button 
-                  onClick={() => copy(swCode)}
-                  className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-3 rounded-xl transition-all"
-                >
-                  <Copy size={18} />
-                </button>
-             </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-sm">
-             <div className="flex items-center gap-4 mb-8">
-               <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black text-xl">2</div>
-               <h3 className="text-2xl font-black text-slate-900">طلب الإذن والحصول على Token</h3>
-             </div>
-             <p className="text-slate-600 mb-6 font-medium leading-relaxed">أضف هذا الكود في واجهة موقعك لطلب إذن الإشعارات من الزوار.</p>
-             
-             <div className="relative group">
-                <pre className="bg-slate-900 text-blue-300 p-8 rounded-3xl text-[11px] font-mono overflow-x-auto ltr text-left leading-relaxed">
-                  {initCode}
-                </pre>
-                <button 
-                  onClick={() => copy(initCode)}
-                  className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-3 rounded-xl transition-all"
-                >
-                  <Copy size={18} />
-                </button>
-             </div>
+        <div className="lg:col-span-2">
+          <div className="glass-card rounded-2xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Terminal size={20} className="text-blue-600" />
+                <h3 className="font-bold text-slate-900">مثال على الطلب (Payload)</h3>
+              </div>
+              <button 
+                onClick={() => copy(apiDoc)}
+                className="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-blue-600 transition-colors"
+              >
+                {copied ? <CheckCircle size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                نسخ الكود
+              </button>
+            </div>
+            <pre className="bg-slate-900 rounded-xl p-6 text-[11px] font-mono text-blue-300 ltr text-left overflow-x-auto leading-relaxed border border-slate-800 shadow-inner">
+              {apiDoc}
+            </pre>
           </div>
         </div>
 
         <div className="space-y-6">
-           <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-blue-500/40">
-              <ShieldCheck size={48} className="mb-6 opacity-80" />
-              <h4 className="text-xl font-black mb-4">لماذا نستخدم Firebase؟</h4>
-              <ul className="space-y-4 text-blue-100 font-bold text-sm">
-                <li className="flex items-start gap-3">
-                   <CheckCircle2 size={18} className="text-white mt-1 shrink-0" />
-                   <span>تجاوز قيود المتصفحات الحديثة في استلام الرسائل.</span>
-                </li>
-                <li className="flex items-start gap-3">
-                   <CheckCircle2 size={18} className="text-white mt-1 shrink-0" />
-                   <span>دعم كامل لأجهزة الأندرويد والآيفون (عبر الويب).</span>
-                </li>
-                <li className="flex items-start gap-3">
-                   <CheckCircle2 size={18} className="text-white mt-1 shrink-0" />
-                   <span>أمان عالي عبر مفاتيح VAPID المشفرة.</span>
-                </li>
-              </ul>
-           </div>
-
-           <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-sm">
-              <div className="flex items-center gap-3 mb-4 text-slate-900">
-                 <Zap className="text-amber-500" size={24} />
-                 <h4 className="font-black">روابط سريعة</h4>
-              </div>
-              <div className="space-y-3">
-                 <a href="#" className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors group">
-                    <span className="text-xs font-black text-slate-700">توثيق الـ Rest API</span>
-                    <Terminal size={14} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
-                 </a>
-                 <a href="#" className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-colors group">
-                    <span className="text-xs font-black text-slate-700">تحميل ملف الـ SDK</span>
-                    <Cpu size={14} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
-                 </a>
+           <div className="glass-card rounded-2xl p-8 border-r-4 border-r-blue-600">
+              <Key size={32} className="text-blue-600 mb-4" />
+              <h4 className="font-bold text-slate-900 mb-2">مفاتيح الوصول (API Keys)</h4>
+              <p className="text-xs text-slate-500 mb-6 font-medium">استخدم هذا المفتاح في ترويسة الـ Authorization الخاصة بك.</p>
+              <div className="bg-slate-100 p-3 rounded-lg border border-slate-200 flex items-center justify-between group">
+                 <code className="text-[10px] font-mono font-bold text-slate-600 truncate">nova_live_8x22y9z...</code>
+                 <button className="text-slate-400 group-hover:text-blue-600"><Copy size={14} /></button>
               </div>
            </div>
 
-           <div className="p-6 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center text-center">
-              <Info className="text-slate-300 mb-2" />
-              <p className="text-[10px] text-slate-400 font-bold">تحتاج لمساعدة؟ تواصل مع فريق الدعم التقني عبر الشات المباشر.</p>
+           <div className="glass-card rounded-2xl p-8 bg-slate-50">
+              <h4 className="font-bold text-slate-900 mb-4 text-sm">مراحل التنفيذ:</h4>
+              <div className="space-y-4">
+                 {[
+                   { t: 'تثبيت الـ Service Worker', s: 'done' },
+                   { t: 'الحصول على توكن المشترك', s: 'done' },
+                   { t: 'الربط مع API الإرسال', s: 'pending' }
+                 ].map((step, i) => (
+                   <div key={i} className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-600">{step.t}</span>
+                      {step.s === 'done' ? <CheckCircle size={14} className="text-emerald-500" /> : <ChevronRight size={14} className="text-slate-300" />}
+                   </div>
+                 ))}
+              </div>
            </div>
         </div>
       </div>
-
-      {copied && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl animate-in fade-in slide-in-from-bottom-5">
-           ✅ تم نسخ الكود بنجاح!
-        </div>
-      )}
     </div>
   );
 };

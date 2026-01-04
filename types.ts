@@ -1,17 +1,37 @@
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  plan: 'free' | 'pro' | 'enterprise';
+  consumption: {
+    messagesSent: number;
+    limit: number;
+    apiCalls: number;
+  };
+}
+
 export interface AppInstance {
   id: string;
   name: string;
   url: string;
   projectId: string;
-  apiKey: string;
-  messagingSenderId: string;
-  vapidKey: string;
-  status: 'active' | 'pending_verification' | 'disabled';
-  verificationToken: string;
+  status: 'active' | 'pending_verification' | 'error';
+  platform: {
+    web: boolean;
+    android: boolean;
+    ios: boolean;
+  };
+  credentials: {
+    fcmKey?: string;
+    apnsKey?: string;
+    safariId?: string;
+  };
   subscribersCount: number;
   createdAt: string;
+  // Fix: Added missing properties used in AppsView
   plan: 'free' | 'pro' | 'enterprise';
+  verificationToken: string;
 }
 
 export interface Campaign {
@@ -19,27 +39,30 @@ export interface Campaign {
   title: string;
   message: string;
   clickUrl: string;
+  imageUrl?: string;
   status: 'draft' | 'scheduled' | 'sending' | 'completed';
+  scheduledTime?: string;
   stats: {
     sent: number;
     delivered: number;
     clicked: number;
   };
-  targetType: 'all' | 'segment' | 'individual';
-  appId: string;
-  createdAt: string;
-  // Added properties used in CampaignsView.tsx
+  target: {
+    platforms: string[];
+    countries: string[];
+  };
+  // Fix: Added missing property used in CampaignsView
   targetDomains: string[];
-  sentCount?: number;
+  // Fix: Added missing createdAt property used in AppContext
+  createdAt: string;
 }
 
-export interface Workflow {
+export interface SystemLog {
   id: string;
-  name: string;
-  trigger: 'on_subscribe' | 'on_click' | 'inactivity';
-  action: 'send_notification';
-  delay: string;
-  isActive: boolean;
+  level: 'info' | 'warning' | 'error';
+  message: string;
+  timestamp: string;
+  service: 'FCM' | 'APNs' | 'API' | 'Scheduler';
 }
 
 export interface Stats {
@@ -47,7 +70,8 @@ export interface Stats {
   activeLast24h: number;
   avgClickRate: number;
   conversionRate: number;
-  countryDistribution: { name: string; value: number }[];
+  growth: number;
+  timeline: { date: string; sent: number; clicks: number }[];
   deviceDistribution: { name: string; value: number }[];
-  timeline: { date: string; clicks: number; sent: number }[];
+  countryDistribution: { name: string; value: number }[];
 }

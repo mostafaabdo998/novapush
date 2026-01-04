@@ -1,130 +1,129 @@
 
-import React, { useEffect, useState } from 'react';
-import { FCMService } from '../services/fcmService';
-import { AppInstance } from '../types';
-import { Globe, Plus, CheckCircle2, AlertCircle, ShieldCheck, Settings2, Trash2, Key, ChevronRight, Activity, Copy } from 'lucide-react';
+import React, { useState } from 'react';
+import { useApp } from '../store/AppContext';
+import { 
+  Globe, Plus, CheckCircle2, AlertCircle, Trash2, 
+  Settings2, Copy, ShieldCheck, X, Activity 
+} from 'lucide-react';
 
 const AppsView: React.FC = () => {
-  const [apps, setApps] = useState<AppInstance[]>([]);
+  const { apps, addApp, deleteApp } = useApp();
   const [showModal, setShowModal] = useState(false);
-  const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  
-  const service = FCMService.getInstance();
+  const [newApp, setNewApp] = useState({ name: '', url: '', projectId: '' });
 
-  useEffect(() => {
-    service.getApps().then(setApps);
-  }, []);
-
-  const handleVerify = async (id: string) => {
-    setVerifyingId(id);
-    await service.verifyDomain(id);
-    setVerifyingId(null);
-    service.getApps().then(setApps);
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert('تم نسخ كود التحقق!');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    addApp(newApp);
+    setNewApp({ name: '', url: '', projectId: '' });
+    setShowModal(false);
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-black text-slate-900">المواقع الموثقة</h1>
-          <p className="text-slate-500 font-bold mt-2">إدارة البنية التحتية والمفاتيح لكل مشروع في Firebase.</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 font-jakarta">البنية التحتية</h1>
+          <p className="text-slate-500 text-sm mt-1">إدارة المشاريع، التوثيق، ومفاتيح الربط البرمجي.</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 shadow-2xl shadow-blue-600/30 hover:scale-105 transition-all"
+          className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-slate-200"
         >
-          <Plus size={20} />
-          إضافة موقع جديد
+          <Plus size={16} />
+          إضافة مشروع
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {apps.map(app => (
-          <div key={app.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500">
-            <div className="p-10 flex-1 space-y-8">
-              <div className="flex justify-between items-start">
-                 <div className="flex items-center gap-4">
-                    <div className={`p-4 rounded-2xl ${app.status === 'active' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-600'}`}>
-                       <Globe size={28} />
-                    </div>
-                    <div>
-                       <h3 className="text-2xl font-black text-slate-900">{app.name}</h3>
-                       <p className="text-xs text-slate-400 font-bold">{app.url}</p>
-                    </div>
-                 </div>
-                 <div className="flex flex-col items-end">
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase flex items-center gap-2 ${
-                      app.status === 'active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'
-                    }`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${app.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
-                      {app.status === 'active' ? 'نشط وموثق' : 'بانتظار التحقق'}
-                    </span>
-                    <span className="text-[9px] text-slate-400 font-bold mt-2">خطة: {app.plan.toUpperCase()}</span>
-                 </div>
-              </div>
-
-              {app.status === 'pending_verification' && (
-                <div className="bg-amber-50 border border-amber-100 p-6 rounded-3xl space-y-4">
-                   <div className="flex items-start gap-3">
-                      <AlertCircle className="text-amber-600 shrink-0" size={18} />
-                      <div className="text-xs font-bold text-amber-900 leading-relaxed">
-                        يرجى إضافة كود الـ Meta التالي لموقعك لإثبات الملكية وتفعيل الربط مع FCM:
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-amber-200">
-                      <code className="text-[10px] font-mono text-slate-700 flex-1 truncate">
-                        &lt;meta name="pushnova-verification" content="{app.verificationToken}" /&gt;
-                      </code>
-                      <button onClick={() => copyToClipboard(app.verificationToken)} className="text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-all"><Copy size={16} /></button>
-                   </div>
-                   <button 
-                     onClick={() => handleVerify(app.id)}
-                     disabled={verifyingId === app.id}
-                     className="w-full py-3 bg-amber-600 text-white rounded-xl text-xs font-black shadow-lg shadow-amber-600/20 disabled:opacity-50"
-                   >
-                     {verifyingId === app.id ? 'جاري الفحص...' : 'فحص التوثيق الآن'}
-                   </button>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-100">
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">المشتركون</p>
-                    <p className="text-2xl font-black text-slate-900">{app.subscribersCount.toLocaleString()}</p>
-                 </div>
-                 <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-100">
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">نسبة التسليم</p>
-                    <p className="text-2xl font-black text-blue-600">98.2%</p>
-                 </div>
-              </div>
+          <div key={app.id} className="glass-card rounded-2xl p-8 flex flex-col group hover:border-blue-200 transition-all">
+            <div className="flex justify-between items-start mb-6">
+               <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl ${app.status === 'active' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                    <Globe size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900">{app.name}</h3>
+                    <p className="text-[11px] text-slate-400 font-medium">{app.url}</p>
+                  </div>
+               </div>
+               <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                 app.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+               }`}>
+                 {app.status === 'active' ? 'موثق' : 'قيد المراجعة'}
+               </span>
             </div>
 
-            <div className="px-10 py-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-               <div className="flex gap-4">
-                  <button className="flex items-center gap-2 text-xs font-black text-slate-500 hover:text-blue-600 transition-all">
-                    <Settings2 size={16} /> الإعدادات المتقدمة
-                  </button>
-                  <button className="flex items-center gap-2 text-xs font-black text-slate-500 hover:text-blue-600 transition-all">
-                    <Key size={16} /> مفاتيح API
-                  </button>
+            <div className="grid grid-cols-2 gap-4 mb-8">
+               <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">المشتركون</p>
+                  <p className="text-lg font-black text-slate-900">{app.subscribersCount.toLocaleString()}</p>
                </div>
-               <button className="p-3 text-slate-300 hover:text-rose-500 transition-all hover:bg-rose-50 rounded-xl"><Trash2 size={18} /></button>
+               <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">نسبة التسليم</p>
+                  <p className="text-lg font-black text-blue-600">98.5%</p>
+               </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-auto">
+               <div className="flex gap-4">
+                  <button className="text-slate-400 hover:text-blue-600 transition-colors"><Settings2 size={16} /></button>
+                  <button className="text-slate-400 hover:text-blue-600 transition-colors"><Activity size={16} /></button>
+               </div>
+               <button 
+                 onClick={() => deleteApp(app.id)}
+                 className="text-slate-300 hover:text-rose-500 transition-colors"
+               >
+                <Trash2 size={16} />
+               </button>
             </div>
           </div>
         ))}
 
-        <div className="bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2.5rem] flex flex-col items-center justify-center p-12 text-center group cursor-pointer hover:bg-white hover:border-blue-200 transition-all duration-500">
-           <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Plus size={32} className="text-slate-300 group-hover:text-blue-600" />
-           </div>
-           <h3 className="text-xl font-black text-slate-400 group-hover:text-blue-900">ربط مشروع جديد</h3>
-        </div>
+        {apps.length === 0 && (
+          <div className="col-span-full py-20 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-slate-400">
+             <Globe size={48} className="mb-4 opacity-20" />
+             <p className="font-bold italic">لا توجد مشاريع حالية.. ابدأ بإضافة مشروعك الأول.</p>
+          </div>
+        )}
       </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+           <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-extrabold text-slate-900 font-jakarta">مشروع جديد</h3>
+                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:bg-slate-100 p-2 rounded-lg">
+                  <X size={18} />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase mb-2 block">اسم التطبيق/المتجر</label>
+                  <input 
+                    type="text" required
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 ring-blue-500/20 focus:outline-none font-bold"
+                    placeholder="مثال: متجر الرياض"
+                    onChange={e => setNewApp({...newApp, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase mb-2 block">رابط الموقع (Domain)</label>
+                  <input 
+                    type="text" required
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 ring-blue-500/20 focus:outline-none font-bold ltr"
+                    placeholder="example.com"
+                    onChange={e => setNewApp({...newApp, url: e.target.value})}
+                  />
+                </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200">
+                  تأكيد الإضافة
+                </button>
+              </form>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

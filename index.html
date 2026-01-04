@@ -4,32 +4,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PushNova Enterprise - Global Push Infrastructure</title>
+    <title>PushNova - Enterprise Push Infrastructure</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <style>
       :root {
-        --primary: #0f172a;
-        --accent: #2563eb;
+        --brand: #2563eb;
+        --bg-main: #fcfdfe;
       }
       body {
-        font-family: 'Tajawal', 'Plus Jakarta Sans', sans-serif;
-        background-color: #f8fafc;
+        font-family: 'Tajawal', 'Inter', sans-serif;
+        background-color: var(--bg-main);
       }
-      .enterprise-gradient {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
+      
+      .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
       }
-      .glass-effect {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+      
+      .nav-item-active {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        color: var(--brand);
       }
-      .nav-active {
-        background: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0) 100%);
-        border-right: 4px solid #2563eb;
-      }
+
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0px); }
+      }
+      .animate-float { animation: float 3s ease-in-out infinite; }
     </style>
     <script type="importmap">
 {
@@ -45,7 +54,7 @@
 }
 </script>
   </head>
-  <body class="antialiased text-slate-900">
+  <body class="antialiased text-slate-900 selection:bg-blue-100 selection:text-blue-700">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>

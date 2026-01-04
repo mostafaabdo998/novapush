@@ -1,226 +1,169 @@
 
-import React, { useEffect, useState } from 'react';
-// Fix: Import FCMService instead of deprecated LaraPushService
-import { FCMService } from '../services/fcmService';
-// Fix: Use AppInstance instead of non-existent Domain
-import { Campaign, AppInstance } from '../types';
-import { Send, Plus, CheckCircle, Bell, Smartphone, Globe, ShieldCheck, Lock, Tags } from 'lucide-react';
+import React, { useState } from 'react';
+import { useApp } from '../store/AppContext';
+import { Send, Plus, Bell, Smartphone, Monitor, CheckCircle, Info, Sparkles, X } from 'lucide-react';
 
 const CampaignsView: React.FC = () => {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  // Fix: Use AppInstance[] for segments state
-  const [segments, setSegments] = useState<AppInstance[]>([]);
+  const { apps, campaigns, sendNotification } = useApp();
   const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ title: '', message: '', url: '', targetDomains: [] as string[] });
   const [isSending, setIsSending] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    message: '',
-    url: '',
-    targetDomains: [] as string[] 
-  });
-  
-  // Fix: Use FCMService instance
-  const service = FCMService.getInstance();
-
-  useEffect(() => {
-    // Fix: getCampaigns now exists in FCMService
-    service.getCampaigns().then(setCampaigns);
-    // Fix: Call getApps() to populate segments
-    service.getApps().then(setSegments);
-  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.targetDomains.length === 0) {
-      alert("يرجى تحديد متجر واحد على الأقل للإرسال");
-      return;
-    }
-    
     setIsSending(true);
-    // Fix: sendFCMNotification now exists in FCMService
-    const success = await service.sendFCMNotification(formData);
+    await sendNotification(formData);
     setIsSending(false);
-    
-    if (success) {
-      setShowModal(false);
-      setFormData({ title: '', message: '', url: '', targetDomains: [] });
-      // Refresh campaigns list
-      service.getCampaigns().then(setCampaigns);
-      alert("🚀 تم إرسال الحملة بنجاح عبر نظام السيجمنتات!");
-    } else {
-      alert("⚠️ حدث خطأ أثناء الإرسال، يرجى التحقق من إعدادات الربط.");
-    }
-  };
-
-  const toggleSegment = (tag: string) => {
-    setFormData(prev => ({
-      ...prev,
-      targetDomains: prev.targetDomains.includes(tag)
-        ? prev.targetDomains.filter(t => t !== tag)
-        : [...prev.targetDomains, tag]
-    }));
+    setShowModal(false);
+    setFormData({ title: '', message: '', url: '', targetDomains: [] });
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">حملات الإرسال الذكية</h1>
-          <p className="text-slate-500 font-medium">توجيه الإشعارات لجمهور محدد بناءً على الوسوم (Tags).</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 font-jakarta">الحملات والبث</h1>
+          <p className="text-slate-500 text-sm mt-1">توجيه الإشعارات للجمهور المستهدف عبر بروتوكولات HTTP/2.</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 shadow-xl shadow-blue-500/20 transition-all hover:scale-105"
+          className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
         >
-          <Plus size={20} />
-          إنشاء حملة مستهدفة
+          <Plus size={16} />
+          حملة جديدة
         </button>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
-        <table className="w-full text-right">
-          <thead className="bg-slate-50/50 border-b border-slate-100">
-            <tr>
-              <th className="px-8 py-5 text-sm font-black text-slate-400">محتوى الحملة</th>
-              <th className="px-8 py-5 text-sm font-black text-slate-400">السيجمنت المستهدف</th>
-              <th className="px-8 py-5 text-sm font-black text-slate-400">الوصول</th>
-              <th className="px-8 py-5 text-sm font-black text-slate-400">الحالة</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {campaigns.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="p-12 text-center text-slate-400 font-bold">لا توجد حملات مرسلة حالياً</td>
-              </tr>
-            ) : (
-              campaigns.map((c) => (
-                <tr key={c.id} className="hover:bg-blue-50/20 transition-colors">
-                  <td className="px-8 py-6">
-                    <div className="font-black text-slate-900 text-md">{c.title}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium">{c.message}</div>
-                  </td>
-                  <td className="px-8 py-6">
-                     <div className="flex gap-2 flex-wrap">
-                       {c.targetDomains && c.targetDomains.map(tag => (
-                         <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-black">Tag: {tag}</span>
-                       ))}
-                     </div>
-                  </td>
-                  <td className="px-8 py-6">
-                     <div className="flex flex-col">
-                        <span className="text-sm font-black text-slate-900">{(c.sentCount ?? c.stats.sent ?? 0).toLocaleString()}</span>
-                        <span className="text-[10px] text-emerald-600 font-bold">نموذج الإرسال: segmentation_id</span>
-                     </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-black shadow-sm">
-                      <CheckCircle size={12} />
-                      تم الإرسال
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <div className="glass-card rounded-2xl overflow-hidden">
+             <table className="w-full text-right border-collapse">
+                <thead className="bg-slate-50/50 border-b border-slate-100">
+                   <tr>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">محتوى الحملة</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">التفاعل</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">الحالة</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                   {campaigns.length === 0 ? (
+                     <tr>
+                        <td colSpan={3} className="px-6 py-20 text-center text-slate-300 font-bold italic">لا توجد حملات مرسلة بعد.</td>
+                     </tr>
+                   ) : (
+                     campaigns.map(c => (
+                       <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-5">
+                             <h4 className="font-bold text-slate-900 text-sm">{c.title}</h4>
+                             <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[200px]">{c.message}</p>
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                             <div className="flex flex-col">
+                                <span className="text-xs font-black text-slate-900">{c.stats.sent.toLocaleString()}</span>
+                                <span className="text-[9px] text-emerald-500 font-bold">وصول مرتفع</span>
+                             </div>
+                          </td>
+                          <td className="px-6 py-5">
+                             <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">مكتمل</span>
+                          </td>
+                       </tr>
+                     ))
+                   )}
+                </tbody>
+             </table>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+           <div className="glass-card rounded-2xl p-8 bg-blue-600 text-white shadow-xl shadow-blue-100">
+              <Sparkles size={24} className="mb-4 text-blue-200" />
+              <h4 className="font-bold mb-2 text-sm">تلميحة الذكاء الاصطناعي</h4>
+              <p className="text-xs text-blue-100 font-medium leading-relaxed">
+                استخدم العناوين القصيرة (أقل من 40 حرفاً) لزيادة نسبة النقر بمعدل 15% على أجهزة الأندرويد.
+              </p>
+           </div>
+           
+           <div className="glass-card rounded-2xl p-8">
+              <h4 className="font-bold text-slate-900 mb-4 text-sm">نصائح البث:</h4>
+              <div className="space-y-4">
+                 <div className="flex gap-3">
+                    <div className="p-2 bg-slate-100 rounded-lg text-slate-500"><Smartphone size={16} /></div>
+                    <div className="text-[10px] text-slate-500 font-bold">صور الإشعارات (Big Image) مدعومة في الأندرويد فقط.</div>
+                 </div>
+                 <div className="flex gap-3">
+                    <div className="p-2 bg-slate-100 rounded-lg text-slate-500"><Monitor size={16} /></div>
+                    <div className="text-[10px] text-slate-500 font-bold">المتصفحات تتطلب تفاعلاً أولياً من المستخدم لعرض الإشعار.</div>
+                 </div>
+              </div>
+           </div>
+        </div>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] animate-in slide-in-from-bottom-10">
-            
-            <div className="flex-1 p-10 space-y-8 overflow-y-auto custom-scrollbar">
-              <h2 className="text-2xl font-black text-slate-900">تجهيز الحملة بنظام السيجمنت</h2>
-
-              <form onSubmit={handleSend} className="space-y-8">
-                <div className="space-y-4 bg-slate-50/50 p-8 rounded-[2rem] border-2 border-slate-100">
-                   <label className="text-sm font-black text-slate-700 flex items-center gap-2 mb-4">
-                     <Tags size={20} className="text-blue-600" />
-                     اختر المتاجر المستهدفة (LaraPush Tags):
-                   </label>
-                   <div className="flex flex-wrap gap-3">
-                     {segments.map(s => (
-                       <button
-                         key={s.id}
-                         type="button"
-                         onClick={() => toggleSegment(s.url)}
-                         className={`px-6 py-3 rounded-2xl text-sm font-black border-2 transition-all ${
-                           formData.targetDomains.includes(s.url)
-                             ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/30'
-                             : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300'
-                         }`}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[600px] animate-in zoom-in-95">
+              {/* Form Section */}
+              <div className="flex-1 p-10 overflow-y-auto custom-scrollbar">
+                 <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-xl font-extrabold text-slate-900 font-jakarta">بث حملة جديدة</h2>
+                    <button onClick={() => setShowModal(false)} className="md:hidden text-slate-400 p-2"><X size={18} /></button>
+                 </div>
+                 <form onSubmit={handleSend} className="space-y-6">
+                    <div>
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">المشروع المستهدف</label>
+                       <select 
+                         required
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold"
+                         onChange={e => setFormData({...formData, targetDomains: [e.target.value]})}
                        >
-                         {s.url}
-                       </button>
-                     ))}
-                   </div>
-                   <p className="text-[10px] text-slate-400 font-medium italic">ملاحظة: سيتم تمرير أول متجر مختار كـ segmentation_id لضمان الخصوصية.</p>
-                </div>
+                          <option value="">اختر مشروعاً...</option>
+                          {apps.map(app => <option key={app.id} value={app.url}>{app.name}</option>)}
+                       </select>
+                    </div>
+                    <div>
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">عنوان الإشعار</label>
+                       <input 
+                         type="text" required
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold"
+                         placeholder="أدخل عنواناً جذاباً..."
+                         onChange={e => setFormData({...formData, title: e.target.value})}
+                       />
+                    </div>
+                    <div>
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">محتوى الرسالة</label>
+                       <textarea 
+                         required rows={3}
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none font-bold resize-none"
+                         placeholder="اكتب رسالتك هنا..."
+                         onChange={e => setFormData({...formData, message: e.target.value})}
+                       ></textarea>
+                    </div>
+                    <button 
+                      type="submit" disabled={isSending}
+                      className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
+                    >
+                      {isSending ? 'جاري البث...' : <><Send size={18} /> إطلاق الحملة الآن</>}
+                    </button>
+                 </form>
+              </div>
 
-                <div className="grid grid-cols-1 gap-6">
-                  <input 
-                    type="text" required
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    placeholder="عنوان الإشعار..."
-                    className="w-full px-6 py-4 rounded-2xl border-2 border-slate-100 focus:border-blue-600 focus:outline-none font-bold shadow-sm transition-all"
-                  />
-                  <textarea 
-                    rows={3} required
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    placeholder="محتوى الرسالة التسويقية..."
-                    className="w-full px-6 py-4 rounded-2xl border-2 border-slate-100 focus:border-blue-600 focus:outline-none font-bold shadow-sm transition-all resize-none"
-                  ></textarea>
-                  <input 
-                    type="url" required
-                    value={formData.url}
-                    onChange={(e) => setFormData({...formData, url: e.target.value})}
-                    placeholder="رابط الهبوط (https://...)"
-                    className="w-full px-6 py-4 rounded-2xl border-2 border-slate-100 focus:border-blue-600 focus:outline-none font-bold shadow-sm transition-all"
-                  />
-                </div>
-
-                <div className="flex gap-4 pt-6">
-                  <button 
-                    type="submit" disabled={isSending}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black flex items-center justify-center gap-3 shadow-2xl shadow-blue-500/40 transition-all"
-                  >
-                    {isSending ? 'جاري الفلترة والإرسال...' : 'إرسال لسيجمنت العميل'}
-                  </button>
-                  <button type="button" onClick={() => setShowModal(false)} className="px-10 py-5 text-slate-400 font-black hover:bg-slate-50 rounded-2xl">إلغاء</button>
-                </div>
-              </form>
-            </div>
-
-            <div className="w-[400px] bg-slate-900 p-12 hidden lg:flex flex-col items-center justify-center">
-               <h3 className="text-xs font-black text-blue-400 mb-10 uppercase tracking-widest">معاينة الهاتف</h3>
-               <div className="w-full max-w-[250px] aspect-[9/18.5] bg-black rounded-[3rem] border-[8px] border-slate-800 p-3 relative shadow-2xl">
-                 <div className="mt-14 px-2">
-                    <div className="bg-white/95 rounded-xl p-4 shadow-2xl border border-white/20">
-                      <div className="flex gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-600 flex-shrink-0 flex items-center justify-center shadow-lg">
-                          <Bell size={20} className="text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-[10px] font-black text-slate-900 truncate">{formData.title || 'عنوان الحملة'}</h4>
-                          <p className="text-[9px] text-slate-600 line-clamp-2 mt-1 font-medium">{formData.message || 'محتوى الإشعار المستهدف...'}</p>
-                        </div>
-                      </div>
+              {/* Preview Section */}
+              <div className="w-80 bg-slate-50 border-r border-slate-100 p-10 flex flex-col items-center justify-center">
+                 <h4 className="text-[10px] font-black text-slate-400 uppercase mb-8 tracking-widest">معاينة الهاتف</h4>
+                 <div className="w-56 h-[400px] bg-black rounded-[2.5rem] border-[6px] border-slate-800 p-3 relative shadow-2xl">
+                    <div className="w-12 h-1 bg-slate-800 rounded-full mx-auto mb-10"></div>
+                    <div className="bg-white/95 rounded-xl p-3 shadow-xl flex gap-3 animate-in fade-in slide-in-from-top-2">
+                       <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                          <Bell size={16} className="text-white" />
+                       </div>
+                       <div className="min-w-0">
+                          <p className="text-[9px] font-black text-slate-900 truncate">{formData.title || 'العنوان يظهر هنا'}</p>
+                          <p className="text-[8px] text-slate-500 line-clamp-2 leading-tight">{formData.message || 'نص الرسالة سيظهر للمشتركين بهذا الشكل..'}</p>
+                       </div>
                     </div>
                  </div>
-               </div>
-               <div className="mt-10 p-4 bg-white/5 rounded-2xl border border-white/10 w-full">
-                  <div className="flex items-center gap-2 mb-2">
-                     <ShieldCheck size={14} className="text-emerald-400" />
-                     <span className="text-slate-400 font-black text-[10px]">LaraPush: segmentation_id Mode</span>
-                  </div>
-                  <code className="text-[9px] text-blue-300 font-mono block">
-                    {`{ "segmentation_id": "${formData.targetDomains[0] || 'store_tag'}" }`}
-                  </code>
-               </div>
-            </div>
-          </div>
+              </div>
+           </div>
         </div>
       )}
     </div>

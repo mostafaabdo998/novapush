@@ -1,33 +1,25 @@
 
 import React from 'react';
 import { 
-  LayoutDashboard, 
-  Send, 
-  AppWindow, 
-  Code, 
-  Settings, 
-  Users, 
-  Zap, 
-  BarChart3, 
-  ShieldCheck, 
-  Layers,
-  Workflow
+  LayoutDashboard, Send, AppWindow, Code, Settings, Users, 
+  Zap, BarChart3, ShieldCheck, Workflow, CreditCard, Activity, Database
 } from 'lucide-react';
 
 export const NAVIGATION_ITEMS = [
-  { name: 'نظرة عامة', icon: <LayoutDashboard size={20} />, id: 'dashboard' },
-  { name: 'إدارة المواقع', icon: <AppWindow size={20} />, id: 'apps' },
-  { name: 'مركز الإرسال', icon: <Send size={20} />, id: 'campaigns' },
+  { name: 'لوحة التحكم', icon: <LayoutDashboard size={20} />, id: 'dashboard' },
+  { name: 'المواقع والتطبيقات', icon: <AppWindow size={20} />, id: 'apps' },
+  { name: 'مركز الحملات', icon: <Send size={20} />, id: 'campaigns' },
   { name: 'الأتمتة الذكية', icon: <Workflow size={20} />, id: 'automation' },
-  { name: 'تحليلات عميقة', icon: <BarChart3 size={20} />, id: 'analytics' },
-  { name: 'إدارة الجمهور', icon: <Users size={20} />, id: 'subscribers' },
-  { name: 'أدوات المطورين', icon: <Code size={20} />, id: 'integration' },
-  { name: 'الإعدادات', icon: <Settings size={20} />, id: 'settings' },
+  { name: 'سجلات النظام', icon: <Activity size={20} />, id: 'logs' },
+  { name: 'قاعدة الأجهزة', icon: <Database size={20} />, id: 'devices' },
+  { name: 'الربط والبرمجة', icon: <Code size={20} />, id: 'integration' },
+  { name: 'الاشتراك والفوترة', icon: <CreditCard size={20} />, id: 'billing' },
+  { name: 'الإعدادات العامة', icon: <Settings size={20} />, id: 'settings' },
 ];
 
 export const MOCK_USER = {
   name: 'عبدالرحمن محمد',
-  role: 'مدير العمليات',
-  company: 'Global Retail Group',
+  role: 'Enterprise Administrator',
+  company: 'PushNova Global Ltd',
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'
 };
